@@ -394,7 +394,7 @@ async function resolveCompId(
     const found = await sql<{ competition_id: string }[]>`
       select competition_id from ierne_tennis.competitions where competition_id = ${requested}
     `;
-    if (!found.length) throw new Error(`Unknown competition: ${requested}`);
+    if (!found.length) throw new ApiError(`Unknown competition: ${requested}`, 404);
     return found[0].competition_id;
   }
   const competitionType = normalizeCompetitionType(competitionTypeParam);
@@ -405,7 +405,7 @@ async function resolveCompId(
      order by starts_on desc nulls last, competition_id asc
      limit 1
   `;
-  if (!current.length) throw new Error(`No current ${competitionType} competition is set`);
+  if (!current.length) throw new ApiError(`No current ${competitionType} competition is set`, 404);
   return current[0].competition_id;
 }
 

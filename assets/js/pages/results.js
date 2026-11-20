@@ -64,6 +64,10 @@ var ResultsPage = {
   loadResults: async function () {
     var container = document.getElementById('results-list');
     if (!container) return;
+    if (typeof CurrentCompetition !== 'undefined' && !CurrentCompetition.getCompId()) {
+      container.innerHTML = '<p><em>No competitions are running at the moment.</em></p>';
+      return;
+    }
     try {
       var params = { action: 'getFixtures' };
       if (typeof CurrentCompetition !== 'undefined') Object.assign(params, CurrentCompetition.apiParams());
