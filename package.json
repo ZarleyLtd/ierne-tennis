@@ -1,0 +1,13 @@
+{
+  "name": "ierne-tennis",
+  "version": "1.0.0",
+  "description": "Ierne Tennis website. Static HTML + Supabase Edge Function.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke": "node scripts/smoke-test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

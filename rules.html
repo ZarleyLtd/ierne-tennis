@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en-gb">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#1F6B45" />
+    <link rel="icon" href="assets/icons/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.json" />
+    <title>Rules - Ierne Tennis</title>
+    <meta name="description" content="Club tennis rules and the format of each competition." />
+    <meta property="og:title" content="Rules" />
+    <meta property="og:description" content="Club tennis rules and the format of each competition." />
+    <meta property="og:image" content="assets/icons/icon-512.png" />
+    <meta property="og:site_name" content="Ierne Tennis" />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/css/brief-message.css" />
+    <link rel="stylesheet" href="assets/css/confirm-dialog.css" />
+    <link rel="stylesheet" href="assets/css/working-indicator.css" />
+    <link rel="stylesheet" href="assets/css/tennis.css" />
+    <noscript><style>img[loading] { opacity: 1; }</style></noscript>
+    <!-- Configuration -->
+    <script src="assets/js/config/app-config.js"></script>
+    <!-- Utilities -->
+    <script src="assets/js/utils/api-client.js"></script>
+    <script src="assets/js/utils/current-competition.js"></script>
+    <script src="assets/js/utils/nav-competition.js"></script>
+    <script src="assets/js/utils/admin-mode.js"></script>
+    <script src="assets/js/utils/player-session.js"></script>
+    <script src="assets/js/utils/formatters.js"></script>
+    <script src="assets/js/utils/image-loader.js"></script>
+    <script src="assets/js/utils/brief-message.js"></script>
+    <script src="assets/js/utils/confirm-dialog.js"></script>
+    <script src="assets/js/utils/working-indicator.js"></script>
+    <script src="assets/js/utils/tennis-score.js"></script>
+    <!-- Page modules -->
+    <script src="assets/js/pages/standings.js"></script>
+    <script src="assets/js/pages/ladder.js"></script>
+    <!-- Contextual help -->
+    <script src="assets/js/utils/help-catalog.js"></script>
+    <script src="assets/js/components/contextual-help.js"></script>
+    <!-- Router -->
+    <script defer src="assets/js/main.js"></script>
+  </head>
+
+  <body class="page-template" data-page="rules">
+    <header class="top js-header">
+      <a class="logo" href="index.html" data-help="chrome.logo">
+        <img src="assets/images/Ierne-logo-768x920.png" alt="Ierne Tennis home" width="768" height="920">
+      </a>
+      <button type="button" class="help-toggle" data-help-toggle aria-pressed="false" aria-label="Help: tap, then tap a control" title="Help">?</button>
+      <nav class="navbar js-navbar">
+        <button class="navbar__toggle js-toggle" data-help="chrome.menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+          <span class="navbar__toggle-box">
+            <span class="navbar__toggle-inner">Menu</span>
+          </span>
+        </button>
+        <ul class="navbar__menu">
+          <li><a data-help="chrome.navHome" href="index.html" target="_self">Home</a></li>
+          <li class="nav-item-standings"><a data-help="chrome.navStandings" href="standings.html" target="_self">Standings</a></li>
+          <li class="nav-item-ladder" hidden aria-hidden="true"><a data-help="chrome.navLadder" href="ladder.html" target="_self">Ladder</a></li>
+          <li><a data-help="chrome.navFixtures" href="fixtures.html" target="_self">Fixtures</a></li>
+          <li><a data-help="chrome.navResults" href="results.html" target="_self">Results</a></li>
+          <li><a data-help="chrome.navRules" href="rules.html" target="_self">Rules</a></li>
+          <li class="nav-account-signed-out"><button type="button" class="nav-account-connect" data-help="chrome.connect">Connect</button></li>
+          <li class="nav-account-signed-in" hidden><span class="nav-account-who" data-help="chrome.account"></span></li>
+          <li class="nav-account-signed-in" hidden><button type="button" class="nav-account-signout" data-help="chrome.signOut">Sign out</button></li>
+          <li><button type="button" class="nav-admin-toggle" data-help="chrome.adminToggle" id="nav-admin-mode-toggle">Unlock Admin Mode</button></li>
+          <li class="nav-admin-only" hidden aria-hidden="true"><a data-help="chrome.navManageComps" href="admin-competitions.html" target="_self">Manage Comps</a></li>
+          <li class="nav-admin-only" hidden aria-hidden="true"><a data-help="chrome.navManagePlayers" href="admin-players.html" target="_self">Manage Players</a></li>
+          <li class="nav-admin-only" hidden aria-hidden="true"><a data-help="chrome.navManageFixtures" href="admin-fixtures.html" target="_self">Manage Fixtures</a></li>
+          <li class="nav-admin-only" hidden aria-hidden="true"><a data-help="chrome.navAccounts" href="admin-accounts.html" target="_self">Accounts</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main class="page">
+      <article class="content">
+        <div class="hero">
+          <header class="hero__content hero__content--centered">
+            <div class="wrapper"><h1>Rules</h1></div>
+          </header>
+          <figure class="hero__image">
+            <div class="hero__image-wrapper">
+              <img src="assets/images/court-banner.svg" loading="eager" height="529" width="1456" alt="Tennis court lines" />
+            </div>
+          </figure>
+        </div>
+        <div class="entry-wrapper content__entry">
+          <div class="page-content" data-help="rules.body">
+            <h2>Club rules</h2>
+            <p>The club's tennis rules will appear here.</p>
+            <h2>This season's competitions</h2>
+            <div id="rules-format" data-help="rules.comp"><p><em>Loading…</em></p></div>
+            <h2>Entering results</h2>
+            <ul>
+              <li>Either side can enter the score from the Fixtures page after the match. Sign in with <strong>Connect</strong> first.</li>
+              <li>Enter the games in each set. When a set finishes 7-6, the tiebreak points are optional.</li>
+              <li>You can correct your result for 24 hours after it is first entered. After that, ask an approver or an admin.</li>
+              <li>Results entered by players show as pending until an approver or admin approves them. Pending results still count.</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+    </main>
+    <footer class="footer">
+      <div class="wrapper">
+        <nav class="footer__nav">
+          <ul>
+            <li><a data-help="chrome.navStandings" href="standings.html" class="al footer-standings-link" target="_self">Standings</a></li>
+            <li hidden><a data-help="chrome.navLadder" href="ladder.html" class="al footer-ladder-link" target="_self">Ladder</a></li>
+            <li><a data-help="chrome.navFixtures" href="fixtures.html" class="al" target="_self">Fixtures</a></li>
+            <li><a data-help="chrome.navResults" href="results.html" class="al" target="_self">Results</a></li>
+          </ul>
+        </nav>
+        <div class="footer__copyright">
+          <p><span class="footer__credit">by JPP</span></p>
+        </div>
+        <button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top" data-help="chrome.backToTop">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d="M8 6L12 2L16 6" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M12 2V22" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+    </footer>
+    <script defer src="assets/js/scripts.min.js"></script>
+    <script>
+      window.themeMenuConfig = {
+        mobileMenuMode: "overlay",
+        animationSpeed: 300,
+        submenuWidth: "auto",
+        doubleClickTime: 500,
+        mobileMenuExpandableSubmenus: true,
+        relatedContainerForOverlayMenuSelector: ".top",
+      };
+    </script>
+    <script src="assets/js/utils/nav-active.js"></script>
+  </body>
+</html>

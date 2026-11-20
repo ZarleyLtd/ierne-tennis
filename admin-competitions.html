@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en-gb">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#1F6B45" />
+    <link rel="icon" href="assets/icons/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.json" />
+    <title>Manage Comps - Ierne Tennis</title>
+    <meta name="description" content="Manage competitions, groups and entrants." />
+    <meta property="og:title" content="Manage Comps" />
+    <meta property="og:description" content="Manage competitions, groups and entrants." />
+    <meta property="og:image" content="assets/icons/icon-512.png" />
+    <meta property="og:site_name" content="Ierne Tennis" />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/css/admin-panel.css" />
+    <link rel="stylesheet" href="assets/css/fixture-features.css" />
+    <link rel="stylesheet" href="assets/css/brief-message.css" />
+    <link rel="stylesheet" href="assets/css/confirm-dialog.css" />
+    <link rel="stylesheet" href="assets/css/working-indicator.css" />
+    <link rel="stylesheet" href="assets/css/tennis.css" />
+    <noscript><style>img[loading] { opacity: 1; }</style></noscript>
+    <!-- Configuration -->
+    <script src="assets/js/config/app-config.js"></script>
+    <!-- Utilities -->
+    <script src="assets/js/utils/api-client.js"></script>
+    <script src="assets/js/utils/current-competition.js"></script>
+    <script src="assets/js/utils/nav-competition.js"></script>
+    <script src="assets/js/utils/admin-mode.js"></script>
+    <script src="assets/js/utils/player-session.js"></script>
+    <script src="assets/js/utils/formatters.js"></script>
+    <script src="assets/js/utils/image-loader.js"></script>
+    <script src="assets/js/utils/brief-message.js"></script>
+    <script src="assets/js/utils/confirm-dialog.js"></script>
+    <script src="assets/js/utils/working-indicator.js"></script>
+    <!-- Page modules -->
+    <script src="assets/js/pages/admin-competitions.js"></script>
+    <!-- Contextual help -->
+    <script src="assets/js/utils/help-catalog.js"></script>
+    <script src="assets/js/components/contextual-help.js"></script>
+    <!-- Router -->
+    <script defer src="assets/js/main.js"></script>
+  </head>
+
+  <body class="page-template" data-page="admin-comps">
+    <header class="top js-header">
+      <a class="logo" href="index.html" data-help="chrome.logo">
+        <img src="assets/images/Ierne-logo-768x920.png" alt="Ierne Tennis home" width="768" height="920">
+      </a>
+      <button type="button" class="help-toggle" data-help-toggle aria-pressed="false" aria-label="Help: tap, then tap a control" title="Help">?</button>
+      <nav class="navbar js-navbar">
+        <button class="navbar__toggle js-toggle" data-help="chrome.menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+          <span class="navbar__toggle-box">
+            <span class="navbar__toggle-inner">Menu</span>
+          </span>
+        </button>
+        <ul class="navbar__menu">
+          <li><a data-help="chrome.navHome" href="index.html" target="_self">Home</a></li>
+          <li class="nav-item-standings"><a data-help="chrome.navStandings" href="standings.html" target="_self">Standings</a></li>
+          <li class="nav-item-ladder" hidden aria-hidden="true"><a data-help="chrome.navLadder" href="ladder.html" target="_self">Ladder</a></li>
+          <li><a data-help="chrome.navFixtures" href="fixtures.html" target="_self">Fixtures</a></li>
+          <li><a data-help="chrome.navResults" href="results.html" target="_self">Results</a></li>
+          <li><a data-help="chrome.navRules" href="rules.html" target="_self">Rules</a></li>
+          <li class="nav-account-signed-out"><button type="button" class="nav-account-connect" data-help="chrome.connect">Connect</button></li>
+          <li class="nav-account-signed-in" hidden><span class="nav-account-who" data-help="chrome.account"></span></li>
+          <li class="nav-account-signed-in" hidden><button type="button" class="nav-account-signout" data-help="chrome.signOut">Sign out</button></li>
+          <li><button type="button" class="nav-admin-toggle" data-help="chrome.adminToggle" id="nav-admin-mode-toggle">Unlock Admin Mode</button></li>
+          <li class="nav-admin-only" hidden aria-hidden="true"><a data-help="chrome.navManageComps" href="admin-competitions.html" target="_self">Manage Comps</a></li>
+          <li class="nav-admin-only" hidden aria-hidden="true"><a data-help="chrome.navManagePlayers" href="admin-players.html" target="_self">Manage Players</a></li>
+          <li class="nav-admin-only" hidden aria-hidden="true"><a data-help="chrome.navManageFixtures" href="admin-fixtures.html" target="_self">Manage Fixtures</a></li>
+          <li class="nav-admin-only" hidden aria-hidden="true"><a data-help="chrome.navAccounts" href="admin-accounts.html" target="_self">Accounts</a></li>
+        </ul>
+      </nav>
+    </header>
+<main class="page">
+      <article class="content">
+        <div class="hero">
+          <header class="hero__content hero__content--centered">
+            <div class="wrapper"><h1>Manage Comps</h1></div>
+          </header>
+          <figure class="hero__image">
+            <div class="hero__image-wrapper">
+              <img src="assets/images/court-banner.svg" loading="eager" height="529" width="1456" alt="Tennis court lines" />
+            </div>
+          </figure>
+        </div>
+        <div class="entry-wrapper content__entry" id="adminCompetitionsRoot">
+          <p id="adminCompGate" class="msg msg--info">
+            Unlock <strong>Admin Mode</strong> from the menu to manage comps, groups, and rosters.
+          </p>
+          <div id="adminCompPanel" class="admin-container" hidden>
+            <p id="adminCompMsg" class="msg" hidden></p>
+            <div class="admin-toolbar">
+              <button type="button" class="btn" id="adminCompAddBtn" data-help="adminComps.add">+ Add Comp</button>
+            </div>
+            <div id="adminCompList" class="admin-player-picks admin-item-list" data-help="adminComps.list">
+              <p class="admin-player-picks__hint"><em>Loading comps…</em></p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <div id="adminCompModal" class="admin-modal admin-modal--dark admin-modal--season" role="dialog" aria-modal="true" aria-labelledby="adminCompModalTitle" hidden data-help="adminComps.dialog">
+      <div class="admin-modal__dialog admin-modal__dialog--wide">
+        <div class="admin-modal__header">
+          <button type="button" class="help-toggle" data-help-toggle aria-pressed="false" aria-label="Help: tap, then tap a control" title="Help">?</button>
+          <h2 id="adminCompModalTitle">Add Comp</h2>
+          <button type="button" class="admin-modal__close" data-help="chrome.close" id="adminCompModalClose" aria-label="Close">&times;</button>
+        </div>
+        <form id="adminCompForm">
+          <div class="admin-form-group">
+            <label for="adminCompName">Name</label>
+            <input type="text" id="adminCompName" required data-help="adminComps.name" />
+          </div>
+          <div class="admin-form-row admin-form-row--type-current">
+            <div class="admin-form-row__field admin-form-row__field--type">
+              <label for="adminCompType">Type</label>
+              <select id="adminCompType" data-help="adminComps.type">
+                <option value="league">League</option>
+                <option value="knockout">Knockout</option>
+                <option value="double-eliminator">Double-Eliminator</option>
+                <option value="ladder">Ladder</option>
+              </select>
+            </div>
+            <div class="admin-form-row__field admin-form-row__field--type">
+              <label for="adminCompFormat">Format</label>
+              <select id="adminCompFormat" data-help="adminComps.format">
+                <option value="singles">Singles</option>
+                <option value="doubles">Doubles</option>
+                <option value="mixed">Mixed doubles</option>
+              </select>
+            </div>
+            <div class="admin-form-group--checkbox admin-form-group--checkbox-inline">
+              <label for="adminCompCurrent">Current</label>
+              <input type="checkbox" id="adminCompCurrent" data-help="adminComps.current" />
+            </div>
+          </div>
+          <fieldset class="admin-fieldset" data-help="adminComps.matchFormat">
+            <legend>Match format</legend>
+            <div class="admin-form-row">
+              <div class="admin-form-row__field">
+                <label for="adminCompSetsToWin">Match length</label>
+                <select id="adminCompSetsToWin">
+                  <option value="1">One set</option>
+                  <option value="2" selected>Best of 3 sets</option>
+                  <option value="3">Best of 5 sets</option>
+                </select>
+              </div>
+              <div class="admin-form-row__field">
+                <label for="adminCompGamesPerSet">Games per set</label>
+                <select id="adminCompGamesPerSet">
+                  <option value="4">4 (short sets)</option>
+                  <option value="6" selected>6</option>
+                  <option value="8">8 (pro set)</option>
+                </select>
+              </div>
+              <div class="admin-form-row__field">
+                <label for="adminCompFinalSet">Deciding set</label>
+                <select id="adminCompFinalSet">
+                  <option value="match_tiebreak" selected>Match tiebreak to 10</option>
+                  <option value="full">Full set</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+          <fieldset class="admin-fieldset" id="adminCompPointsSection" data-help="adminComps.points">
+            <legend>League points</legend>
+            <div class="admin-form-row">
+              <div class="admin-form-row__field">
+                <label for="adminCompPointsPreset">Preset</label>
+                <select id="adminCompPointsPreset">
+                  <option value="">Custom</option>
+                  <option value="2,0,0,0">Win 2, loss 0</option>
+                  <option value="3,0,1,0">Win 3, loss with a set 1</option>
+                  <option value="0,0,0,1">1 point per set won</option>
+                </select>
+              </div>
+              <div class="admin-form-row__field admin-form-row__field--narrow">
+                <label for="adminCompWinPts">Win</label>
+                <input type="number" id="adminCompWinPts" min="0" max="10" value="2" />
+              </div>
+              <div class="admin-form-row__field admin-form-row__field--narrow">
+                <label for="adminCompLossPts">Loss</label>
+                <input type="number" id="adminCompLossPts" min="0" max="10" value="0" />
+              </div>
+              <div class="admin-form-row__field admin-form-row__field--narrow">
+                <label for="adminCompLossBonus">Loss with a set</label>
+                <input type="number" id="adminCompLossBonus" min="0" max="10" value="0" />
+              </div>
+              <div class="admin-form-row__field admin-form-row__field--narrow">
+                <label for="adminCompSetPts">Per set won</label>
+                <input type="number" id="adminCompSetPts" min="0" max="10" value="0" />
+              </div>
+            </div>
+            <p class="admin-player-picks__hint">Loss with a set is added to the loss points when the loser won at least one set. Per set won is added for every set, win or lose.</p>
+          </fieldset>
+          <fieldset class="admin-fieldset" id="adminCompLadderSection" data-help="adminComps.ladder" hidden>
+            <legend>Ladder rules</legend>
+            <div class="admin-form-row">
+              <div class="admin-form-row__field">
+                <label for="adminCompLadderRange">Challenge up to (places above)</label>
+                <input type="number" id="adminCompLadderRange" min="1" max="20" value="3" />
+              </div>
+              <div class="admin-form-row__field">
+                <label for="adminCompLadderDays">Days to play a challenge</label>
+                <input type="number" id="adminCompLadderDays" min="1" max="90" value="14" />
+              </div>
+            </div>
+          </fieldset>
+
+          <div id="adminCompManageSection" class="admin-ls-manage" hidden>
+            <div id="adminCompPairSection" class="admin-ls-pairs" hidden data-help="adminComps.pairs">
+              <h3 class="admin-ls-manage__heading">Make a pair</h3>
+              <p class="admin-player-picks__hint">Doubles comps are entered by pairs. Make each pair once; it can then be ticked in any doubles comp.</p>
+              <div class="admin-form-row">
+                <div class="admin-form-row__field admin-form-row__field--grow">
+                  <label for="adminCompPairA">Player</label>
+                  <select id="adminCompPairA"></select>
+                </div>
+                <div class="admin-form-row__field admin-form-row__field--grow">
+                  <label for="adminCompPairB">Partner</label>
+                  <select id="adminCompPairB"></select>
+                </div>
+                <div class="admin-form-row__field admin-form-row__field--button">
+                  <button type="button" class="btn" id="adminCompPairAdd">Make pair</button>
+                </div>
+              </div>
+              <p id="adminCompPairWarn" class="admin-player-picks__hint admin-player-picks__hint--warn" hidden></p>
+            </div>
+            <div id="adminCompLeagueSection" class="admin-ls-league">
+              <div class="admin-section-header">
+                <h3 class="admin-ls-manage__heading">Groups</h3>
+                <button type="button" class="btn" id="adminCompAddGroup" data-help="adminComps.addGroup">+ Add Group</button>
+              </div>
+              <p class="admin-player-picks__hint">Each group needs at least two entrants. An entrant can only belong to one group.</p>
+              <div id="adminCompGroupsList" class="admin-player-picks admin-item-list" data-help="adminComps.group"></div>
+            </div>
+            <div id="adminCompKnockoutStagesSection" class="admin-ls-knockout-stages" hidden>
+              <div class="admin-section-header">
+                <h3 class="admin-ls-manage__heading">Knockout stage</h3>
+                <button type="button" class="btn" id="adminCompAddKnockout" data-help="adminComps.addKnockout">Add knockout stage</button>
+              </div>
+              <div id="adminCompKnockoutStagesList" class="admin-player-picks admin-item-list" data-help="adminComps.knockoutStage"></div>
+            </div>
+            <div id="adminCompKnockoutSection" class="admin-ls-knockout">
+              <h3 class="admin-ls-manage__heading" id="adminCompRosterHeading">Entrants</h3>
+              <p class="admin-player-picks__hint" id="adminCompRosterHint">Tick who is in this comp (saved with Save Comp).</p>
+              <div id="adminCompKnockoutPlayers" class="admin-player-picks admin-player-picks--inline" data-help="adminComps.players"></div>
+            </div>
+            <div id="adminCompLadderOrderSection" class="admin-ls-ladder-order" hidden data-help="adminComps.ladderOrder">
+              <h3 class="admin-ls-manage__heading">Starting order</h3>
+              <p class="admin-player-picks__hint">Top of the list starts at position 1. Results then move people up and down. Changing the starting order replays every result from the new order.</p>
+              <ol id="adminCompLadderOrder" class="admin-ladder-order"></ol>
+              <button type="button" class="btn" id="adminCompLadderOrderSave">Save starting order</button>
+            </div>
+          </div>
+          <p id="adminCompSaveFirstHint" class="admin-player-picks__hint">Save the comp first to add groups or entrants.</p>
+
+          <div class="admin-form-actions">
+            <div class="admin-form-actions__left">
+              <button type="button" class="btn btn-danger" id="adminCompDelete" hidden data-help="adminComps.delete">Delete Comp</button>
+            </div>
+            <div class="admin-form-actions__right">
+              <button type="button" class="btn btn-secondary" id="adminCompModalCancel" data-help="adminComps.cancel">Cancel</button>
+              <button type="submit" class="btn btn-save" id="adminCompSave" data-help="adminComps.save">Save Comp</button>
+            </div>
+          </div>
+          <p id="adminCompModalMsg" class="msg admin-modal__msg admin-modal__msg--below-actions" hidden></p>
+        </form>
+      </div>
+    </div>
+
+    <div id="adminCompDeleteConfirm" class="admin-modal admin-modal--dark admin-modal--confirm" role="dialog" aria-modal="true" aria-labelledby="adminCompDeleteConfirmTitle" hidden>
+      <div class="admin-modal__dialog admin-modal__dialog--confirm">
+        <div class="admin-modal__header">
+          <h2 id="adminCompDeleteConfirmTitle">Delete Comp</h2>
+          <button type="button" class="admin-modal__close" id="adminCompDeleteConfirmClose" data-help="chrome.close" aria-label="Close">&times;</button>
+        </div>
+        <p id="adminCompDeleteConfirmText" class="admin-confirm__text"></p>
+        <div class="admin-form-actions admin-form-actions--confirm">
+          <div class="admin-form-actions__right">
+            <button type="button" class="btn btn-secondary" id="adminCompDeleteConfirmCancel">Cancel</button>
+            <button type="button" class="btn btn-danger" id="adminCompDeleteConfirmOk" data-help="adminComps.delete">Confirm Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminCompGroupModal" class="admin-modal admin-modal--dark admin-modal--group" role="dialog" aria-modal="true" hidden data-help="adminComps.dialog">
+      <div class="admin-modal__dialog admin-modal__dialog--wide">
+        <div class="admin-modal__header">
+          <button type="button" class="help-toggle" data-help-toggle aria-pressed="false" aria-label="Help: tap, then tap a control" title="Help">?</button>
+          <h2 id="adminCompGroupModalTitle">Add Group</h2>
+          <button type="button" class="admin-modal__close" data-help="chrome.close" data-close="group" aria-label="Close">&times;</button>
+        </div>
+        <form id="adminCompGroupForm">
+          <div class="admin-form-group">
+            <div class="admin-form-row admin-form-row--id-order">
+              <div class="admin-form-row__field admin-form-row__field--grow">
+                <label for="adminCompGroupId">Group id</label>
+                <input type="text" id="adminCompGroupId" required pattern="[-a-z0-9]+" data-help="adminComps.groupId" />
+              </div>
+              <div class="admin-form-row__field admin-form-row__field--order">
+                <label for="adminCompGroupOrder">Order</label>
+                <input type="number" id="adminCompGroupOrder" value="0" min="0" data-help="adminComps.groupOrder" />
+              </div>
+            </div>
+            <small>Group id: lowercase letters, numbers, hyphens (e.g. 1, 2, 3)</small>
+          </div>
+          <div class="admin-form-group">
+            <label for="adminCompGroupName">Display name</label>
+            <input type="text" id="adminCompGroupName" required placeholder="e.g. Group 1" data-help="adminComps.groupName" />
+          </div>
+          <div class="admin-form-group">
+            <span class="admin-ls-label">Entrants</span>
+            <p class="admin-player-picks__hint">Only entrants not already in another group are listed.</p>
+            <div id="adminCompGroupPlayers" class="admin-player-picks admin-player-picks--inline" data-help="adminComps.groupPlayers"></div>
+          </div>
+          <div class="admin-form-actions">
+            <div class="admin-form-actions__left">
+              <button type="button" class="btn btn-danger" id="adminCompGroupDelete" hidden data-help="adminComps.removeGroup">Remove Group</button>
+            </div>
+            <div class="admin-form-actions__right">
+              <button type="button" class="btn btn-secondary" data-close="group" data-help="adminComps.cancel">Cancel</button>
+              <button type="submit" class="btn btn-save" id="adminCompGroupSave" data-help="adminComps.saveGroup">Save Group</button>
+            </div>
+          </div>
+          <p id="adminCompGroupModalMsg" class="msg admin-modal__msg admin-modal__msg--below-actions" hidden></p>
+        </form>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="wrapper">
+        <nav class="footer__nav">
+          <ul>
+            <li><a data-help="chrome.navStandings" href="standings.html" class="al footer-standings-link" target="_self">Standings</a></li>
+            <li hidden><a data-help="chrome.navLadder" href="ladder.html" class="al footer-ladder-link" target="_self">Ladder</a></li>
+            <li><a data-help="chrome.navFixtures" href="fixtures.html" class="al" target="_self">Fixtures</a></li>
+            <li><a data-help="chrome.navResults" href="results.html" class="al" target="_self">Results</a></li>
+          </ul>
+        </nav>
+        <div class="footer__copyright">
+          <p><span class="footer__credit">by JPP</span></p>
+        </div>
+        <button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top" data-help="chrome.backToTop">
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d="M8 6L12 2L16 6" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M12 2V22" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+    </footer>
+    <script defer src="assets/js/scripts.min.js"></script>
+    <script>
+      window.themeMenuConfig = {
+        mobileMenuMode: "overlay",
+        animationSpeed: 300,
+        submenuWidth: "auto",
+        doubleClickTime: 500,
+        mobileMenuExpandableSubmenus: true,
+        relatedContainerForOverlayMenuSelector: ".top",
+      };
+    </script>
+    <script src="assets/js/utils/nav-active.js"></script>
+  </body>
+</html>

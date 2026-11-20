@@ -1,0 +1,1445 @@
+// Admin — competitions list + groups/rosters in comp dialog.
+
+var AdminCompetitionsPage = (function () {
+  var KNOCKOUT_GROUP_ID = 'ko';
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function typeLabel(t) {
+    var n = normalizeCompetitionType(t);
+    if (n === 'knockout') return 'Knockout';
+    if (n === 'double-eliminator') return 'Double-Eliminator';
+    if (n === 'ladder') return 'Ladder';
+    return 'League';
+  }
+
+  function formatLabel(f) {
+    if (f === 'doubles') return 'Doubles';
+    if (f === 'mixed') return 'Mixed doubles';
+    return 'Singles';
+  }
+
+  function normalizeCompetitionType(compOrType) {
+    if (!compOrType) return 'league';
+    var raw =
+      typeof compOrType === 'string'
+        ? compOrType
+        : compOrType.competitionType || compOrType.competition_type || 'league';
+    var t = String(raw).trim().toLowerCase();
+    if (t === 'knockout') return 'knockout';
+    if (t === 'double-eliminator' || t === 'double_eliminator' || t === 'doubleelim') {
+      return 'double-eliminator';
+    }
+    if (t === 'ladder') return 'ladder';
+    return 'league';
+  }
+
+  /** Knockout, double-eliminator and ladder comps keep one roster in the internal 'ko' group. */
+  function isBracketTypeValue(t) {
+    var n = normalizeCompetitionType(t);
+    return n === 'knockout' || n === 'double-eliminator' || n === 'ladder';
+  }
+
+  function playerGroup(entry) {
+    if (!entry) return '';
+    return entry.group != null ? entry.group : entry.groupId;
+  }
+
+  function seq(steps) {
+    return steps.reduce(function (chain, fn) {
+      return chain.then(fn);
+    }, Promise.resolve());
+  }
+
+  function qsCompId() {
+    try {
+      return new URL(window.location.href).searchParams.get('compId') || '';
+    } catch (_e) {
+      return '';
+    }
+  }
+
+  function slugifyCompId(name) {
+    var s = String(name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return s || 'comp';
+  }
+
+  function uniqueCompId(base, competitions) {
+    var id = base;
+    var n = 2;
+    while (
+      (competitions || []).some(function (c) {
+        return c.compId === id;
+      })
+    ) {
+      id = base + '-' + n;
+      n += 1;
+    }
+    return id;
+  }
+
+  var self = {
+    competitions: [],
+    editing: null,
+    activeCompId: null,
+    groups: [],
+    roster: [],
+    allPlayers: [],
+    people: [],
+    ladderOrder: [],
+    editingGroup: null,
+    editSessionId: 0,
+    pendingDeleteCompId: null,
+    el: {},
+
+    isKnockoutType: function () {
+      return isBracketTypeValue(self.el.cType ? self.el.cType.value : 'league');
+    },
+
+    isLeagueType: function () {
+      return !self.isKnockoutType();
+    },
+
+    isLadderType: function () {
+      return normalizeCompetitionType(self.el.cType ? self.el.cType.value : 'league') === 'ladder';
+    },
+
+    isDoublesFormat: function () {
+      var f = self.el.cFormat ? self.el.cFormat.value : 'singles';
+      return f === 'doubles' || f === 'mixed';
+    },
+
+    adminEvt: function () {
+      return typeof AdminMode !== 'undefined' ? AdminMode.EVENT_NAME : 'ierne-tennis-admin-mode-changed';
+    },
+
+    cacheEls: function () {
+      this.el = {
+        gate: document.getElementById('adminCompGate'),
+        panel: document.getElementById('adminCompPanel'),
+        msg: document.getElementById('adminCompMsg'),
+        list: document.getElementById('adminCompList'),
+        addBtn: document.getElementById('adminCompAddBtn'),
+        modal: document.getElementById('adminCompModal'),
+        modalTitle: document.getElementById('adminCompModalTitle'),
+        modalClose: document.getElementById('adminCompModalClose'),
+        modalMsg: document.getElementById('adminCompModalMsg'),
+        modalCancel: document.getElementById('adminCompModalCancel'),
+        form: document.getElementById('adminCompForm'),
+        cName: document.getElementById('adminCompName'),
+        cType: document.getElementById('adminCompType'),
+        cFormat: document.getElementById('adminCompFormat'),
+        setsToWin: document.getElementById('adminCompSetsToWin'),
+        gamesPerSet: document.getElementById('adminCompGamesPerSet'),
+        finalSet: document.getElementById('adminCompFinalSet'),
+        pointsSection: document.getElementById('adminCompPointsSection'),
+        pointsPreset: document.getElementById('adminCompPointsPreset'),
+        winPts: document.getElementById('adminCompWinPts'),
+        lossPts: document.getElementById('adminCompLossPts'),
+        lossBonus: document.getElementById('adminCompLossBonus'),
+        setPts: document.getElementById('adminCompSetPts'),
+        ladderSection: document.getElementById('adminCompLadderSection'),
+        ladderRange: document.getElementById('adminCompLadderRange'),
+        ladderDays: document.getElementById('adminCompLadderDays'),
+        pairSection: document.getElementById('adminCompPairSection'),
+        pairA: document.getElementById('adminCompPairA'),
+        pairB: document.getElementById('adminCompPairB'),
+        pairAdd: document.getElementById('adminCompPairAdd'),
+        pairWarn: document.getElementById('adminCompPairWarn'),
+        rosterHeading: document.getElementById('adminCompRosterHeading'),
+        rosterHint: document.getElementById('adminCompRosterHint'),
+        ladderOrderSection: document.getElementById('adminCompLadderOrderSection'),
+        ladderOrderList: document.getElementById('adminCompLadderOrder'),
+        ladderOrderSave: document.getElementById('adminCompLadderOrderSave'),
+        cCur: document.getElementById('adminCompCurrent'),
+        cDelete: document.getElementById('adminCompDelete'),
+        cSave: document.getElementById('adminCompSave'),
+        deleteLeft: document.querySelector('#adminCompForm .admin-form-actions__left'),
+        deleteConfirm: document.getElementById('adminCompDeleteConfirm'),
+        deleteConfirmText: document.getElementById('adminCompDeleteConfirmText'),
+        deleteConfirmClose: document.getElementById('adminCompDeleteConfirmClose'),
+        deleteConfirmCancel: document.getElementById('adminCompDeleteConfirmCancel'),
+        deleteConfirmOk: document.getElementById('adminCompDeleteConfirmOk'),
+        manageSection: document.getElementById('adminCompManageSection'),
+        saveFirstHint: document.getElementById('adminCompSaveFirstHint'),
+        leagueSection: document.getElementById('adminCompLeagueSection'),
+        knockoutSection: document.getElementById('adminCompKnockoutSection'),
+        knockoutStagesSection: document.getElementById('adminCompKnockoutStagesSection'),
+        knockoutStagesList: document.getElementById('adminCompKnockoutStagesList'),
+        addKnockout: document.getElementById('adminCompAddKnockout'),
+        groupsList: document.getElementById('adminCompGroupsList'),
+        addGroup: document.getElementById('adminCompAddGroup'),
+        knockoutPlayers: document.getElementById('adminCompKnockoutPlayers'),
+        groupModal: document.getElementById('adminCompGroupModal'),
+        groupModalMsg: document.getElementById('adminCompGroupModalMsg'),
+        groupForm: document.getElementById('adminCompGroupForm'),
+        groupModalTitle: document.getElementById('adminCompGroupModalTitle'),
+        groupId: document.getElementById('adminCompGroupId'),
+        groupName: document.getElementById('adminCompGroupName'),
+        groupOrder: document.getElementById('adminCompGroupOrder'),
+        groupPlayers: document.getElementById('adminCompGroupPlayers'),
+        groupDelete: document.getElementById('adminCompGroupDelete'),
+        groupSave: document.getElementById('adminCompGroupSave'),
+        groupActionsLeft: document.querySelector('#adminCompGroupForm .admin-form-actions__left'),
+      };
+    },
+
+    flashTarget: function () {
+      if (this.el.groupModal && this.el.groupModal.classList.contains('is-open') && this.el.groupModalMsg) {
+        return this.el.groupModalMsg;
+      }
+      if (this.el.modal && this.el.modal.classList.contains('is-open') && this.el.modalMsg) {
+        return this.el.modalMsg;
+      }
+      return this.el.msg;
+    },
+
+    flash: function (text, isErr) {
+      var el = this.flashTarget();
+      if (!el) return;
+      el.textContent = text || '';
+      el.className = 'msg' + (isErr ? ' msg--warning' : ' msg--success');
+      el.hidden = !text;
+      if (el !== this.el.msg && this.el.msg) {
+        this.el.msg.hidden = true;
+      }
+      if (text && el.scrollIntoView) {
+        try {
+          el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        } catch (e) {
+          el.scrollIntoView(true);
+        }
+      }
+    },
+
+    syncGate: function () {
+      var ok = typeof AdminMode !== 'undefined' && AdminMode.isUnlocked();
+      if (this.el.gate) this.el.gate.hidden = ok;
+      if (this.el.panel) this.el.panel.hidden = !ok;
+      if (ok) {
+        var me = this;
+        this.loadCompetitions().then(function () {
+          var openId = qsCompId();
+          if (openId) {
+            var c = me.competitions.find(function (x) {
+              return x.compId === openId;
+            });
+            if (c) me.openEdit(c);
+          }
+        });
+      }
+    },
+
+    loadCompetitions: function () {
+      var me = this;
+      if (typeof AdminMode === 'undefined' || !AdminMode.isUnlocked()) return Promise.resolve();
+      return ApiClient.get({ action: 'getCompetitions' })
+        .then(function (r) {
+          me.competitions = r.competitions || [];
+          me.renderList();
+        })
+        .catch(function (e) {
+          me.flash(e.message || String(e), true);
+        });
+    },
+
+    loadCompDetail: function (compId, sessionId) {
+      var me = this;
+      if (!compId) return Promise.resolve();
+      return Promise.all([
+        ApiClient.get({ action: 'getCompetitionGroups', compId: compId }),
+        ApiClient.get({ action: 'getPlayers', comp: compId }),
+        ApiClient.get({ action: 'getPlayers' }),
+        ApiClient.get({ action: 'getEntrants', kind: 'pair' }),
+      ]).then(function (rs) {
+        me.groups = rs[0].groups || [];
+        me.roster = rs[1].players || [];
+        me.people = (rs[2].players || []).filter(function (p) {
+          return p.active !== false;
+        });
+        var pairs = (rs[3].entrants || []).map(function (e) {
+          return { playerId: e.entrantId, playerName: e.name, memberIds: e.memberIds };
+        });
+        if (rs[0].competition && (sessionId === undefined || sessionId === me.editSessionId)) {
+          me.applyCompMeta(rs[0].competition);
+        }
+        // The pick lists show people for singles comps and pairs for doubles comps.
+        me.allPlayers = me.isDoublesFormat() ? pairs : me.people;
+        me.renderPairBuilder();
+        me.renderGroups();
+        me.renderKnockoutPlayers();
+        me.renderKnockoutStages();
+        me.renderLadderOrder();
+        me.updateCompDeleteButton();
+      });
+    },
+
+    childKnockoutComps: function () {
+      var parentId = this.activeCompId;
+      if (!parentId) return [];
+      return (this.competitions || []).filter(function (c) {
+        return String(c.parentCompId || '') === String(parentId);
+      });
+    },
+
+    renderKnockoutStages: function () {
+      var box = this.el.knockoutStagesList;
+      var section = this.el.knockoutStagesSection;
+      if (!box || !section) return;
+      if (!this.isLeagueType() || !this.activeCompId) {
+        section.hidden = true;
+        return;
+      }
+      section.hidden = false;
+      var children = this.childKnockoutComps();
+      var me = this;
+      if (!children.length) {
+        box.innerHTML = '<p class="admin-player-picks__hint">No knockout stage linked yet.</p>';
+        return;
+      }
+      var items = children.map(function (c) {
+        return {
+          id: c.compId,
+          name: c.name || c.compId,
+          meta: typeLabel(normalizeCompetitionType(c)),
+          isCurrent: !!c.isCurrent,
+        };
+      });
+      this.renderActionList(box, items, {
+        helpKey: 'adminComps.knockoutStage',
+        onClick: function (id) {
+          var child = me.competitions.find(function (x) {
+            return x.compId === id;
+          });
+          if (child) me.openEdit(child);
+        },
+      });
+    },
+
+    addKnockoutStage: function () {
+      var me = this;
+      var parentId = me.activeCompId;
+      if (!parentId || !me.isLeagueType()) return;
+      var parentName = (me.el.cName && me.el.cName.value.trim()) || parentId;
+      var koId = parentId + '-ko';
+      var existing = me.competitions.find(function (c) {
+        return c.compId === koId;
+      });
+      if (existing) {
+        me.openEdit(existing);
+        return;
+      }
+      if (me.el.addKnockout) me.el.addKnockout.disabled = true;
+      me.persistCompHeader()
+        .then(function () {
+          return ApiClient.post(
+            'upsertCompetition',
+            Object.assign(me.settingsPayload(), {
+              compId: koId,
+              name: parentName + ' Knockout',
+              competitionType: 'knockout',
+              parentCompId: parentId,
+              isCurrent: false,
+            })
+          );
+        })
+        .then(function () {
+          return me.loadCompetitions();
+        })
+        .then(function () {
+          var child = me.competitions.find(function (c) {
+            return c.compId === koId;
+          });
+          if (child) me.openEdit(child);
+          else me.flash('Knockout stage created.', false);
+        })
+        .catch(function (err) {
+          me.flash(err.message || String(err), true);
+        })
+        .finally(function () {
+          if (me.el.addKnockout) me.el.addKnockout.disabled = false;
+        });
+    },
+
+    renderActionList: function (container, items, options) {
+      if (!container) return;
+      var opts = options || {};
+      if (!items.length) {
+        container.innerHTML =
+          '<p class="admin-player-picks__hint">' + esc(opts.emptyText || 'No items.') + '</p>' +
+          (opts.emptyActionHtml || '');
+        if (opts.onEmptyAction) {
+          var actionBtn = container.querySelector('[data-empty-action]');
+          if (actionBtn) {
+            actionBtn.addEventListener('click', opts.onEmptyAction);
+          }
+        }
+        return;
+      }
+      var me = this;
+      container.innerHTML = items
+        .map(function (item) {
+          var current = item.isCurrent ? ' admin-item-list__row--current' : '';
+          var warn = item.warn ? ' <span class="admin-item-list__warn">' + esc(item.warn) + '</span>' : '';
+          return (
+            '<button type="button" class="admin-player-picks__row admin-item-list__row' +
+            current +
+            '" data-help="' +
+            esc(opts.helpKey || 'adminComps.row') +
+            '" data-id="' +
+            esc(item.id) +
+            '">' +
+            '<span class="admin-player-picks__name">' +
+            esc(item.name) +
+            '</span>' +
+            '<span class="admin-item-list__meta">' +
+            esc(item.meta || '') +
+            warn +
+            '</span></button>'
+          );
+        })
+        .join('');
+      container.querySelectorAll('.admin-item-list__row').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.getAttribute('data-id');
+          if (opts.onClick) opts.onClick(id);
+        });
+      });
+    },
+
+    renderList: function () {
+      var box = this.el.list;
+      if (!box) return;
+      var me = this;
+      if (!this.competitions.length) {
+        this.renderActionList(box, [], {
+          emptyText: 'No competitions yet.',
+          emptyActionHtml:
+            '<p style="margin:0.75em 0 0;text-align:center;">' +
+            '<button type="button" class="btn" data-empty-action data-help="adminComps.add">+ Add Comp</button></p>',
+          onEmptyAction: function () {
+            me.openCreate();
+          },
+        });
+        return;
+      }
+      var items = this.competitions.map(function (c) {
+        return {
+          id: c.compId,
+          name: c.name,
+          meta: typeLabel(normalizeCompetitionType(c)) + ' · ' + formatLabel(c.format),
+          isCurrent: !!c.isCurrent,
+        };
+      });
+      this.renderActionList(box, items, {
+        helpKey: 'adminComps.row',
+        onClick: function (id) {
+          var comp = me.competitions.find(function (x) {
+            return x.compId === id;
+          });
+          if (comp) me.openEdit(comp);
+        },
+      });
+    },
+
+    applyManageUi: function () {
+      var ko = this.isKnockoutType();
+      var ladder = this.isLadderType();
+      var doubles = this.isDoublesFormat();
+      if (this.el.leagueSection) this.el.leagueSection.hidden = ko;
+      if (this.el.knockoutSection) this.el.knockoutSection.hidden = !ko;
+      if (this.el.knockoutStagesSection) {
+        this.el.knockoutStagesSection.hidden = ko || !this.activeCompId;
+      }
+      if (this.el.pointsSection) this.el.pointsSection.hidden = ko;
+      if (this.el.ladderSection) this.el.ladderSection.hidden = !ladder;
+      if (this.el.ladderOrderSection) this.el.ladderOrderSection.hidden = !ladder || !this.activeCompId;
+      if (this.el.pairSection) this.el.pairSection.hidden = !doubles || !this.activeCompId;
+      if (this.el.rosterHeading) this.el.rosterHeading.textContent = doubles ? 'Pairs' : 'Players';
+      if (this.el.rosterHint) {
+        this.el.rosterHint.textContent =
+          'Tick the ' + (doubles ? 'pairs' : 'players') + ' in this ' + typeLabel(this.el.cType.value).toLowerCase() +
+          ' (saved with Save Comp).';
+      }
+    },
+
+    /** Fill the match-format, points and ladder fields from a competition. */
+    fillSettings: function (c) {
+      c = c || {};
+      var el = this.el;
+      function setVal(input, v, dflt) {
+        if (input) input.value = String(v == null || v === '' ? dflt : v);
+      }
+      setVal(el.cFormat, c.format, 'singles');
+      setVal(el.setsToWin, c.setsToWin, 2);
+      setVal(el.gamesPerSet, c.gamesPerSet, 6);
+      setVal(el.finalSet, c.finalSet, 'match_tiebreak');
+      setVal(el.winPts, c.winPoints, 2);
+      setVal(el.lossPts, c.lossPoints, 0);
+      setVal(el.lossBonus, c.lossWithSetBonus, 0);
+      setVal(el.setPts, c.setPoints, 0);
+      setVal(el.ladderRange, c.ladderChallengeRange, 3);
+      setVal(el.ladderDays, c.ladderChallengeDays, 14);
+      this.syncPointsPreset();
+    },
+
+    syncPointsPreset: function () {
+      if (!this.el.pointsPreset) return;
+      var key = [this.el.winPts, this.el.lossPts, this.el.lossBonus, this.el.setPts]
+        .map(function (i) {
+          return String(parseInt((i && i.value) || '0', 10) || 0);
+        })
+        .join(',');
+      var match = Array.prototype.some.call(this.el.pointsPreset.options, function (o) {
+        return o.value === key;
+      });
+      this.el.pointsPreset.value = match ? key : '';
+    },
+
+    applyPointsPreset: function () {
+      var v = this.el.pointsPreset ? this.el.pointsPreset.value : '';
+      if (!v) return;
+      var parts = v.split(',');
+      var inputs = [this.el.winPts, this.el.lossPts, this.el.lossBonus, this.el.setPts];
+      inputs.forEach(function (input, i) {
+        if (input) input.value = parts[i] || '0';
+      });
+    },
+
+    settingsPayload: function () {
+      var el = this.el;
+      function num(input, dflt) {
+        var n = parseInt((input && input.value) || '', 10);
+        return isNaN(n) ? dflt : n;
+      }
+      return {
+        format: el.cFormat ? el.cFormat.value : 'singles',
+        setsToWin: num(el.setsToWin, 2),
+        gamesPerSet: num(el.gamesPerSet, 6),
+        finalSet: el.finalSet ? el.finalSet.value : 'match_tiebreak',
+        winPoints: num(el.winPts, 2),
+        lossPoints: num(el.lossPts, 0),
+        lossWithSetBonus: num(el.lossBonus, 0),
+        setPoints: num(el.setPts, 0),
+        ladderChallengeRange: num(el.ladderRange, 3),
+        ladderChallengeDays: num(el.ladderDays, 14),
+      };
+    },
+
+    renderPairBuilder: function () {
+      if (!this.el.pairA || !this.el.pairB) return;
+      var opts =
+        '<option value="">Choose…</option>' +
+        (this.people || [])
+          .map(function (p) {
+            return '<option value="' + esc(p.playerId) + '">' + esc(p.playerName) + (p.gender ? ' (' + esc(p.gender) + ')' : '') + '</option>';
+          })
+          .join('');
+      this.el.pairA.innerHTML = opts;
+      this.el.pairB.innerHTML = opts;
+      if (this.el.pairWarn) this.el.pairWarn.hidden = true;
+    },
+
+    makePair: function () {
+      var me = this;
+      var a = me.el.pairA ? me.el.pairA.value : '';
+      var b = me.el.pairB ? me.el.pairB.value : '';
+      if (!a || !b || a === b) {
+        me.flash('Choose two different players for the pair.', true);
+        return;
+      }
+      var mixedWarn = '';
+      if (me.el.cFormat && me.el.cFormat.value === 'mixed') {
+        var ga = (me.people.find(function (p) { return p.playerId === a; }) || {}).gender;
+        var gb = (me.people.find(function (p) { return p.playerId === b; }) || {}).gender;
+        if (ga && gb && ga === gb) mixedWarn = 'Note: both players are marked ' + ga + '. The pair was still made.';
+      }
+      if (me.el.pairAdd) me.el.pairAdd.disabled = true;
+      ApiClient.post('upsertPair', { player1Id: a, player2Id: b })
+        .then(function () {
+          return me.loadCompDetail(me.activeCompId);
+        })
+        .then(function () {
+          if (mixedWarn && me.el.pairWarn) {
+            me.el.pairWarn.textContent = mixedWarn;
+            me.el.pairWarn.hidden = false;
+          }
+          me.flash('Pair made. Tick it below to enter it.', false);
+        })
+        .catch(function (err) {
+          me.flash(err.message || String(err), true);
+        })
+        .finally(function () {
+          if (me.el.pairAdd) me.el.pairAdd.disabled = false;
+        });
+    },
+
+    renderLadderOrder: function () {
+      var list = this.el.ladderOrderList;
+      if (!list) return;
+      if (!this.isLadderType()) {
+        list.innerHTML = '';
+        return;
+      }
+      var rows = (this.roster || []).slice().sort(function (x, y) {
+        var px = x.ladderStartPosition == null ? 1e9 : x.ladderStartPosition;
+        var py = y.ladderStartPosition == null ? 1e9 : y.ladderStartPosition;
+        return px - py || String(x.playerName).localeCompare(String(y.playerName));
+      });
+      this.ladderOrder = rows.map(function (r) {
+        return { id: r.playerId, name: r.playerName };
+      });
+      this.drawLadderOrder();
+    },
+
+    drawLadderOrder: function () {
+      var list = this.el.ladderOrderList;
+      if (!list) return;
+      if (!this.ladderOrder.length) {
+        list.innerHTML = '<li class="admin-player-picks__hint">Tick entrants above and save first.</li>';
+        return;
+      }
+      list.innerHTML = this.ladderOrder
+        .map(function (r, i) {
+          return (
+            '<li class="admin-ladder-order__row"><span>' + esc(r.name) + '</span>' +
+            '<span><button type="button" class="btn btn-secondary" data-ladder-move="' + i + '" data-dir="-1" aria-label="Move up">↑</button>' +
+            '<button type="button" class="btn btn-secondary" data-ladder-move="' + i + '" data-dir="1" aria-label="Move down">↓</button></span></li>'
+          );
+        })
+        .join('');
+    },
+
+    moveLadderRow: function (index, dir) {
+      var j = index + dir;
+      if (j < 0 || j >= this.ladderOrder.length) return;
+      var tmp = this.ladderOrder[index];
+      this.ladderOrder[index] = this.ladderOrder[j];
+      this.ladderOrder[j] = tmp;
+      this.drawLadderOrder();
+    },
+
+    saveLadderOrder: function () {
+      var me = this;
+      if (!me.activeCompId) return;
+      if (me.el.ladderOrderSave) me.el.ladderOrderSave.disabled = true;
+      ApiClient.post('setLadderStartPositions', {
+        compId: me.activeCompId,
+        order: me.ladderOrder.map(function (r) {
+          return r.id;
+        }),
+      })
+        .then(function () {
+          me.flash('Starting order saved.', false);
+          return me.loadCompDetail(me.activeCompId);
+        })
+        .catch(function (err) {
+          me.flash(err.message || String(err), true);
+        })
+        .finally(function () {
+          if (me.el.ladderOrderSave) me.el.ladderOrderSave.disabled = false;
+        });
+    },
+
+    setManageVisible: function (visible) {
+      if (this.el.manageSection) this.el.manageSection.hidden = !visible;
+      if (this.el.saveFirstHint) this.el.saveFirstHint.hidden = visible;
+    },
+
+    applyCompMeta: function (comp) {
+      if (!comp) return;
+      var type = normalizeCompetitionType(comp);
+      var compId = comp.compId || comp.competition_id || this.activeCompId;
+      if (this.el.cType) this.el.cType.value = type;
+      this.fillSettings(comp);
+      if (this.editing) this.editing.competitionType = type;
+      if (compId) {
+        var idx = this.competitions.findIndex(function (x) {
+          return x.compId === compId;
+        });
+        if (idx >= 0) this.competitions[idx].competitionType = type;
+      }
+      this.applyManageUi();
+      this.updateCompTypeField();
+    },
+
+    resolveCompId: function (name) {
+      if (this.activeCompId) return this.activeCompId;
+      var base = slugifyCompId(name);
+      if (!/^[a-z0-9-]+$/.test(base)) base = 'comp';
+      return uniqueCompId(base, this.competitions);
+    },
+
+    persistCompHeader: function () {
+      var me = this;
+      var name = (me.el.cName && me.el.cName.value.trim()) || '';
+      if (!name) {
+        return Promise.reject(new Error('Name is required.'));
+      }
+      var id = me.resolveCompId(name);
+      var competitionType = me.el.cType ? me.el.cType.value : 'league';
+      var parentCompId = me.editing && me.editing.parentCompId ? me.editing.parentCompId : null;
+      return ApiClient.post(
+        'upsertCompetition',
+        Object.assign(
+          {
+            compId: id,
+            name: name,
+            isCurrent: me.el.cCur ? me.el.cCur.checked : false,
+            competitionType: competitionType,
+            parentCompId: parentCompId,
+          },
+          me.settingsPayload()
+        )
+      ).then(function () {
+        me.activeCompId = id;
+        if (me.editing) me.editing.competitionType = competitionType;
+        var c = me.competitions.find(function (x) {
+          return x.compId === id;
+        });
+        if (c) c.competitionType = competitionType;
+      });
+    },
+
+    compHasPlayers: function () {
+      return (this.roster || []).length > 0;
+    },
+
+    updateCompDeleteButton: function () {
+      var btn = this.el.cDelete;
+      var left = this.el.deleteLeft;
+      if (!btn) return;
+      var editing = !!this.activeCompId;
+      btn.hidden = !editing;
+      if (left) left.hidden = !editing;
+    },
+
+    openDeleteConfirm: function (compId, label) {
+      this.pendingDeleteCompId = compId;
+      if (this.el.deleteConfirmText) {
+        this.el.deleteConfirmText.textContent =
+          'Delete comp "' +
+          label +
+          '"? This permanently removes the competition, its fixtures, groups, and roster.';
+      }
+      if (!this.el.deleteConfirm) return;
+      this.el.deleteConfirm.hidden = false;
+      this.el.deleteConfirm.classList.add('is-open');
+      if (this.el.deleteConfirmOk) this.el.deleteConfirmOk.focus();
+    },
+
+    closeDeleteConfirm: function () {
+      this.pendingDeleteCompId = null;
+      if (!this.el.deleteConfirm) return;
+      this.el.deleteConfirm.classList.remove('is-open');
+      this.el.deleteConfirm.hidden = true;
+    },
+
+    fixtureHasRealResult: function (f) {
+      if (!f) return false;
+      if (
+        String(f.playerAId || '').trim().toLowerCase() === 'bye' ||
+        String(f.playerBId || '').trim().toLowerCase() === 'bye'
+      ) {
+        return false;
+      }
+      var scoreA = f.scoreA;
+      var scoreB = f.scoreB;
+      if (scoreA == null || scoreB == null) return false;
+      return Number.isFinite(Number(scoreA)) && Number.isFinite(Number(scoreB));
+    },
+
+    updateCompTypeField: function () {
+      if (!this.el.cType) return;
+      var hasPlayers = this.compHasPlayers();
+      var hasParent = !!(this.editing && this.editing.parentCompId);
+      this.el.cType.disabled = (!!this.activeCompId && hasPlayers) || hasParent;
+      if (this.el.cFormat) this.el.cFormat.disabled = !!this.activeCompId && hasPlayers;
+    },
+
+    rosterEntry: function (playerId) {
+      return (this.roster || []).find(function (r) {
+        return r.playerId === playerId;
+      });
+    },
+
+    eligibleForGroup: function (groupId) {
+      var gid = groupId || '';
+      return (this.allPlayers || []).filter(function (p) {
+        var entry = self.rosterEntry(p.playerId);
+        if (!entry) return true;
+        if (gid && String(playerGroup(entry)) === String(gid)) return true;
+        return false;
+      });
+    },
+
+    sortPlayersForPick: function (players, checkedIds) {
+      var checked = {};
+      (checkedIds || []).forEach(function (id) {
+        checked[id] = true;
+      });
+      var inGroup = [];
+      var rest = [];
+      (players || []).forEach(function (p) {
+        if (checked[p.playerId]) inGroup.push(p);
+        else rest.push(p);
+      });
+      var byName = function (a, b) {
+        return String(a.playerName || '').localeCompare(String(b.playerName || ''), undefined, {
+          sensitivity: 'base',
+        });
+      };
+      inGroup.sort(byName);
+      rest.sort(byName);
+      return inGroup.concat(rest);
+    },
+
+    renderCheckboxList: function (container, players, checkedIds) {
+      if (!container) return;
+      var sorted = this.sortPlayersForPick(players, checkedIds);
+      var checked = {};
+      (checkedIds || []).forEach(function (id) {
+        checked[id] = true;
+      });
+      if (!sorted.length) {
+        container.innerHTML =
+          '<p class="admin-player-picks__hint" style="padding:0.75em;">' +
+          (self.isDoublesFormat() ? 'No pairs yet. Make a pair above.' : 'No players available.') +
+          '</p>';
+        return;
+      }
+      container.innerHTML = sorted
+        .map(function (p) {
+          var isOn = !!checked[p.playerId];
+          return (
+            '<label class="admin-player-picks__row">' +
+            '<span class="admin-player-picks__name">' +
+            esc(p.playerName) +
+            '</span>' +
+            '<span class="admin-player-picks__check">' +
+            '<input type="checkbox" name="compPlayer" value="' +
+            esc(p.playerId) +
+            '"' +
+            (isOn ? ' checked' : '') +
+            ' aria-label="' +
+            esc(p.playerName) +
+            '" />' +
+            '</span></label>'
+          );
+        })
+        .join('');
+    },
+
+    getCheckedPlayerIds: function (container) {
+      if (!container) return [];
+      return Array.prototype.map
+        .call(container.querySelectorAll('input[type="checkbox"]:checked'), function (cb) {
+          return cb.value;
+        })
+        .filter(Boolean);
+    },
+
+    syncKnockoutRoster: function (compId, selectedIds) {
+      var me = this;
+      var selected = {};
+      selectedIds.forEach(function (id) {
+        selected[id] = true;
+      });
+      var onComp = (me.roster || []).map(function (r) {
+        return r.playerId;
+      });
+      var toRemove = onComp.filter(function (id) {
+        return !selected[id];
+      });
+      var toAdd = selectedIds.filter(function (id) {
+        var entry = me.rosterEntry(id);
+        if (!entry) return true;
+        return String(playerGroup(entry)) !== String(KNOCKOUT_GROUP_ID);
+      });
+      var steps = [];
+      toAdd.forEach(function (playerId) {
+        steps.push(function () {
+          return ApiClient.post('upsertCompetitionPlayer', {
+            compId: compId,
+            playerId: playerId,
+            groupId: KNOCKOUT_GROUP_ID,
+          });
+        });
+      });
+      toRemove.forEach(function (playerId) {
+        steps.push(function () {
+          return ApiClient.post('upsertCompetitionPlayer', {
+            compId: compId,
+            playerId: playerId,
+            remove: true,
+          });
+        });
+      });
+      return seq(steps);
+    },
+
+    syncGroupRoster: function (compId, groupId, selectedIds) {
+      var me = this;
+      var selected = {};
+      selectedIds.forEach(function (id) {
+        selected[id] = true;
+      });
+      var currentInGroup = (me.roster || [])
+        .filter(function (r) {
+          return String(playerGroup(r)) === String(groupId);
+        })
+        .map(function (r) {
+          return r.playerId;
+        });
+      var toAdd = selectedIds.filter(function (id) {
+        return currentInGroup.indexOf(id) < 0;
+      });
+      var toRemove = currentInGroup.filter(function (id) {
+        return !selected[id];
+      });
+      var steps = [];
+      toAdd.forEach(function (playerId) {
+        steps.push(function () {
+          return ApiClient.post('upsertCompetitionPlayer', {
+            compId: compId,
+            playerId: playerId,
+            groupId: groupId,
+          });
+        });
+      });
+      toRemove.forEach(function (playerId) {
+        steps.push(function () {
+          return ApiClient.post('upsertCompetitionPlayer', {
+            compId: compId,
+            playerId: playerId,
+            remove: true,
+          });
+        });
+      });
+      return seq(steps);
+    },
+
+    groupsForDisplay: function () {
+      var list = this.groups || [];
+      if (this.isKnockoutType()) return list;
+      return list.filter(function (g) {
+        return g.groupId !== KNOCKOUT_GROUP_ID;
+      });
+    },
+
+    renderGroups: function () {
+      var box = this.el.groupsList;
+      if (!box || this.isKnockoutType()) return;
+      var groups = this.groupsForDisplay();
+      var me = this;
+      var items = groups.map(function (g) {
+        var count = g.playerCount != null ? Number(g.playerCount) : 0;
+        var noun = me.isDoublesFormat() ? 'pair' : 'player';
+        var meta = count + ' ' + noun + (count === 1 ? '' : 's');
+        return {
+          id: g.groupId,
+          name: g.name,
+          meta: meta,
+          warn: count < 2 ? '(needs 2+)' : '',
+        };
+      });
+      this.renderActionList(box, items, {
+        helpKey: 'adminComps.group',
+        emptyText: 'No groups yet.',
+        onClick: function (id) {
+          var g = me.groups.find(function (x) {
+            return x.groupId === id;
+          });
+          if (g) me.openEditGroup(g);
+        },
+      });
+    },
+
+    renderKnockoutPlayers: function () {
+      if (!this.isKnockoutType() || !this.el.knockoutPlayers) return;
+      var onKo = (this.roster || [])
+        .filter(function (r) {
+          return String(playerGroup(r)) === String(KNOCKOUT_GROUP_ID);
+        })
+        .map(function (r) {
+          return r.playerId;
+        });
+      this.renderCheckboxList(this.el.knockoutPlayers, this.allPlayers, onKo);
+    },
+
+    fillGroupPlayerCheckboxes: function (groupId) {
+      var gid = groupId || (this.el.groupId && this.el.groupId.value.trim()) || '';
+      var eligible = this.eligibleForGroup(gid);
+      var inGroup = (this.roster || [])
+        .filter(function (r) {
+          return String(playerGroup(r)) === String(gid);
+        })
+        .map(function (r) {
+          return r.playerId;
+        });
+      this.renderCheckboxList(this.el.groupPlayers, eligible, inGroup);
+      this.updateGroupDeleteButton();
+    },
+
+    updateGroupDeleteButton: function () {
+      var btn = this.el.groupDelete;
+      var left = this.el.groupActionsLeft;
+      if (!btn) return;
+      if (!this.editingGroup) {
+        btn.hidden = true;
+        if (left) left.hidden = true;
+        return;
+      }
+      var ticked = this.getCheckedPlayerIds(this.el.groupPlayers).length;
+      var hasPlayers = ticked > 0;
+      btn.hidden = hasPlayers;
+      if (left) left.hidden = hasPlayers;
+    },
+
+    openCompModal: function () {
+      if (!this.el.modal) return;
+      this.el.modal.hidden = false;
+      this.el.modal.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    },
+
+    clearPlayerPickers: function () {
+      if (this.el.knockoutPlayers) this.el.knockoutPlayers.innerHTML = '';
+      if (this.el.groupPlayers) this.el.groupPlayers.innerHTML = '';
+      if (this.el.groupsList) this.el.groupsList.innerHTML = '';
+      if (this.el.knockoutStagesList) this.el.knockoutStagesList.innerHTML = '';
+    },
+
+    closeCompModal: function () {
+      this.closeDeleteConfirm();
+      if (!this.el.modal) return;
+      this.el.modal.classList.remove('is-open');
+      this.el.modal.hidden = true;
+      document.body.style.overflow = '';
+      if (this.el.modalMsg) this.el.modalMsg.hidden = true;
+      this.editing = null;
+      this.activeCompId = null;
+      this.groups = [];
+      this.roster = [];
+      this.clearPlayerPickers();
+    },
+
+    openGroupModal: function () {
+      if (!this.el.groupModal) return;
+      this.el.groupModal.hidden = false;
+      this.el.groupModal.classList.add('is-open');
+    },
+
+    closeGroupModal: function () {
+      if (!this.el.groupModal) return;
+      this.el.groupModal.classList.remove('is-open');
+      this.el.groupModal.hidden = true;
+      if (this.el.groupModalMsg) this.el.groupModalMsg.hidden = true;
+      this.editingGroup = null;
+    },
+
+    openCreate: function () {
+      this.editing = null;
+      this.activeCompId = null;
+      this.groups = [];
+      this.roster = [];
+      this.clearPlayerPickers();
+      if (this.el.modalTitle) this.el.modalTitle.textContent = 'Add Comp';
+      if (this.el.form) this.el.form.reset();
+      if (this.el.cType) {
+        this.el.cType.value = 'league';
+        this.el.cType.disabled = false;
+      }
+      if (this.el.cFormat) this.el.cFormat.disabled = false;
+      this.fillSettings({});
+      this.setManageVisible(false);
+      this.updateCompDeleteButton();
+      this.updateCompTypeField();
+      this.applyManageUi();
+      this.openCompModal();
+      if (this.el.cName) this.el.cName.focus();
+    },
+
+    openEdit: function (c) {
+      var me = this;
+      this.editSessionId += 1;
+      var sessionId = this.editSessionId;
+      this.editing = c;
+      this.activeCompId = c.compId;
+      if (this.el.modalTitle) this.el.modalTitle.textContent = 'Edit Comp';
+      if (this.el.cName) this.el.cName.value = c.name || '';
+      if (this.el.cCur) this.el.cCur.checked = !!c.isCurrent;
+      if (this.el.cType) {
+        this.el.cType.value = normalizeCompetitionType(c);
+      }
+      this.fillSettings(c);
+      this.setManageVisible(true);
+      this.updateCompDeleteButton();
+      this.updateCompTypeField();
+      this.applyManageUi();
+      this.openCompModal();
+      this.loadCompDetail(c.compId, sessionId).then(function () {
+        if (me.el.cName) me.el.cName.focus();
+      });
+    },
+
+    saveComp: function (e) {
+      if (e) e.preventDefault();
+      var me = this;
+      var name = (me.el.cName && me.el.cName.value.trim()) || '';
+      if (!name) {
+        me.flash('Name is required.', true);
+        return;
+      }
+      var id = me.resolveCompId(name);
+      var competitionType = me.el.cType ? me.el.cType.value : 'league';
+      if (me.el.cSave) me.el.cSave.disabled = true;
+
+      me.persistCompHeader()
+        .then(function () {
+          // Only sync the visible knockout picker when editing an existing comp.
+          // On first create the manage section is hidden; stale checkboxes from a
+          // previous edit must not be written onto the new competition.
+          if (isBracketTypeValue(competitionType) && me.editing) {
+            var selected = me.getCheckedPlayerIds(me.el.knockoutPlayers);
+            return me.syncKnockoutRoster(id, selected);
+          }
+          return Promise.resolve();
+        })
+        .then(function () {
+          me.closeCompModal();
+          me.flash('Comp saved.', false);
+          return me.loadCompetitions();
+        })
+        .catch(function (err) {
+          me.flash(err.message || String(err), true);
+        })
+        .finally(function () {
+          if (me.el.cSave) me.el.cSave.disabled = false;
+        });
+    },
+
+    deleteComp: function () {
+      if (!this.activeCompId) return;
+      var me = this;
+      var compId = me.activeCompId;
+      var label = (me.el.cName && me.el.cName.value.trim()) || compId;
+      if (me.el.cDelete) me.el.cDelete.disabled = true;
+      ApiClient.get({ action: 'getFixtures', comp: compId })
+        .then(function (r) {
+          var fixtures = r.fixtures || [];
+          for (var i = 0; i < fixtures.length; i++) {
+            if (me.fixtureHasRealResult(fixtures[i])) {
+              throw new Error(
+                'This competition still has results. Delete the results before removing the comp.'
+              );
+            }
+          }
+          me.openDeleteConfirm(compId, label);
+        })
+        .catch(function (err) {
+          me.flash(err.message || String(err), true);
+        })
+        .finally(function () {
+          if (me.el.cDelete) me.el.cDelete.disabled = false;
+        });
+    },
+
+    confirmDeleteComp: function () {
+      var me = this;
+      var compId = me.pendingDeleteCompId;
+      if (!compId) return;
+      if (me.el.deleteConfirmOk) me.el.deleteConfirmOk.disabled = true;
+      if (me.el.deleteConfirmCancel) me.el.deleteConfirmCancel.disabled = true;
+      ApiClient.post('deleteCompetition', { compId: compId })
+        .then(function () {
+          me.closeDeleteConfirm();
+          me.closeCompModal();
+          me.flash('Comp deleted.', false);
+          return me.loadCompetitions();
+        })
+        .catch(function (err) {
+          me.closeDeleteConfirm();
+          me.flash(err.message || String(err), true);
+        })
+        .finally(function () {
+          if (me.el.deleteConfirmOk) me.el.deleteConfirmOk.disabled = false;
+          if (me.el.deleteConfirmCancel) me.el.deleteConfirmCancel.disabled = false;
+        });
+    },
+
+    openCreateGroup: function () {
+      if (!this.activeCompId) return;
+      this.editingGroup = null;
+      if (this.el.groupModalTitle) this.el.groupModalTitle.textContent = 'Add Group';
+      if (this.el.groupForm) this.el.groupForm.reset();
+      if (this.el.groupId) {
+        this.el.groupId.value = '';
+        this.el.groupId.readOnly = false;
+      }
+      if (this.el.groupOrder) this.el.groupOrder.value = String((this.groups.length || 0) + 1);
+      if (this.el.groupDelete) this.el.groupDelete.hidden = true;
+      if (this.el.groupActionsLeft) this.el.groupActionsLeft.hidden = true;
+      this.fillGroupPlayerCheckboxes('');
+      this.openGroupModal();
+    },
+
+    openEditGroup: function (g) {
+      this.editingGroup = g;
+      if (this.el.groupModalTitle) this.el.groupModalTitle.textContent = 'Edit Group';
+      if (this.el.groupId) {
+        this.el.groupId.value = g.groupId;
+        this.el.groupId.readOnly = true;
+      }
+      if (this.el.groupName) this.el.groupName.value = g.name || '';
+      if (this.el.groupOrder) {
+        this.el.groupOrder.value = String(g.displayOrder != null ? g.displayOrder : 0);
+      }
+      this.fillGroupPlayerCheckboxes(g.groupId);
+      this.openGroupModal();
+    },
+
+    saveGroup: function (e) {
+      if (e) e.preventDefault();
+      var me = this;
+      var compId = me.activeCompId;
+      if (!compId) return;
+      var groupId = (me.el.groupId && me.el.groupId.value.trim()) || '';
+      var name = (me.el.groupName && me.el.groupName.value.trim()) || '';
+      var ord = parseInt((me.el.groupOrder && me.el.groupOrder.value) || '0', 10);
+      if (!groupId || !name) {
+        me.flash('Group id and name required.', true);
+        return;
+      }
+      var selected = me.getCheckedPlayerIds(me.el.groupPlayers);
+      if (me.el.groupSave) me.el.groupSave.disabled = true;
+
+      me.persistCompHeader()
+        .then(function () {
+          return ApiClient.post('upsertCompetitionGroup', {
+            compId: compId,
+            groupId: groupId,
+            name: name,
+            displayOrder: ord,
+          });
+        })
+        .then(function () {
+          return me.syncGroupRoster(compId, groupId, selected);
+        })
+        .then(function () {
+          me.closeGroupModal();
+          me.flash('Group saved.', false);
+          return me.loadCompDetail(compId);
+        })
+        .catch(function (err) {
+          me.flash(err.message || String(err), true);
+        })
+        .finally(function () {
+          if (me.el.groupSave) me.el.groupSave.disabled = false;
+        });
+    },
+
+    removeGroup: function () {
+      if (!this.editingGroup || !this.activeCompId) return;
+      var me = this;
+      var group = this.editingGroup;
+      ConfirmDialog.show({
+        title: 'Remove group?',
+        message: 'Remove group "' + group.name + '" from this comp?',
+        confirmLabel: 'Remove group',
+        danger: true,
+      })
+        .then(function (ok) {
+          if (!ok) return null;
+          if (me.el.groupDelete) me.el.groupDelete.disabled = true;
+          return ApiClient.post('deleteCompetitionGroup', {
+            compId: me.activeCompId,
+            groupId: group.groupId,
+          }).then(function () {
+            return true;
+          });
+        })
+        .then(function (done) {
+          if (!done) return;
+          me.closeGroupModal();
+          me.flash('Group removed.', false);
+          return me.loadCompDetail(me.activeCompId);
+        })
+        .catch(function (err) {
+          me.flash(err.message || String(err), true);
+        })
+        .finally(function () {
+          if (me.el.groupDelete) me.el.groupDelete.disabled = false;
+        });
+    },
+
+    bind: function () {
+      var me = this;
+      if (this.el.addBtn) {
+        this.el.addBtn.addEventListener('click', function () {
+          me.openCreate();
+        });
+      }
+      if (this.el.form) {
+        this.el.form.addEventListener('submit', function (e) {
+          me.saveComp(e);
+        });
+      }
+      if (this.el.cType) {
+        this.el.cType.addEventListener('change', function () {
+          me.editSessionId += 1;
+          me.applyManageUi();
+        });
+      }
+      if (this.el.cFormat) {
+        this.el.cFormat.addEventListener('change', function () {
+          me.applyManageUi();
+          if (me.activeCompId) me.flash('Save the comp to switch its pick list between players and pairs.', false);
+        });
+      }
+      if (this.el.pointsPreset) {
+        this.el.pointsPreset.addEventListener('change', function () {
+          me.applyPointsPreset();
+        });
+      }
+      [this.el.winPts, this.el.lossPts, this.el.lossBonus, this.el.setPts].forEach(function (input) {
+        if (input) {
+          input.addEventListener('input', function () {
+            me.syncPointsPreset();
+          });
+        }
+      });
+      if (this.el.pairAdd) {
+        this.el.pairAdd.addEventListener('click', function () {
+          me.makePair();
+        });
+      }
+      if (this.el.ladderOrderList) {
+        this.el.ladderOrderList.addEventListener('click', function (ev) {
+          var btn = ev.target.closest('[data-ladder-move]');
+          if (!btn) return;
+          me.moveLadderRow(parseInt(btn.getAttribute('data-ladder-move'), 10), parseInt(btn.getAttribute('data-dir'), 10));
+        });
+      }
+      if (this.el.ladderOrderSave) {
+        this.el.ladderOrderSave.addEventListener('click', function () {
+          me.saveLadderOrder();
+        });
+      }
+      if (this.el.cDelete) {
+        this.el.cDelete.addEventListener('click', function () {
+          me.deleteComp();
+        });
+      }
+      if (this.el.deleteConfirmClose) {
+        this.el.deleteConfirmClose.addEventListener('click', function () {
+          me.closeDeleteConfirm();
+        });
+      }
+      if (this.el.deleteConfirmCancel) {
+        this.el.deleteConfirmCancel.addEventListener('click', function () {
+          me.closeDeleteConfirm();
+        });
+      }
+      if (this.el.deleteConfirmOk) {
+        this.el.deleteConfirmOk.addEventListener('click', function () {
+          me.confirmDeleteComp();
+        });
+      }
+      if (this.el.deleteConfirm) {
+        this.el.deleteConfirm.addEventListener('click', function (ev) {
+          if (ev.target === me.el.deleteConfirm) me.closeDeleteConfirm();
+        });
+      }
+      if (this.el.modalClose) {
+        this.el.modalClose.addEventListener('click', function () {
+          me.closeCompModal();
+        });
+      }
+      if (this.el.modalCancel) {
+        this.el.modalCancel.addEventListener('click', function () {
+          me.closeCompModal();
+        });
+      }
+      if (this.el.modal) {
+        this.el.modal.addEventListener('click', function (ev) {
+          if (ev.target === me.el.modal) me.closeCompModal();
+        });
+      }
+      if (this.el.addGroup) {
+        this.el.addGroup.addEventListener('click', function () {
+          me.openCreateGroup();
+        });
+      }
+      if (this.el.addKnockout) {
+        this.el.addKnockout.addEventListener('click', function () {
+          me.addKnockoutStage();
+        });
+      }
+      if (this.el.groupForm) {
+        this.el.groupForm.addEventListener('submit', function (e) {
+          me.saveGroup(e);
+        });
+      }
+      if (this.el.groupId) {
+        this.el.groupId.addEventListener('input', function () {
+          if (!me.editingGroup) {
+            me.fillGroupPlayerCheckboxes(me.el.groupId.value.trim());
+          }
+        });
+      }
+      if (this.el.groupPlayers) {
+        this.el.groupPlayers.addEventListener('change', function () {
+          me.updateGroupDeleteButton();
+        });
+      }
+      if (this.el.groupDelete) {
+        this.el.groupDelete.addEventListener('click', function () {
+          me.removeGroup();
+        });
+      }
+      document.querySelectorAll('[data-close="group"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          me.closeGroupModal();
+        });
+      });
+      if (this.el.groupModal) {
+        this.el.groupModal.addEventListener('click', function (ev) {
+          if (ev.target === me.el.groupModal) me.closeGroupModal();
+        });
+      }
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Escape') return;
+        if (me.el.deleteConfirm && me.el.deleteConfirm.classList.contains('is-open')) {
+          me.closeDeleteConfirm();
+        } else if (me.el.groupModal && me.el.groupModal.classList.contains('is-open')) {
+          me.closeGroupModal();
+        } else if (me.el.modal && me.el.modal.classList.contains('is-open')) {
+          me.closeCompModal();
+        }
+      });
+    },
+
+    init: function () {
+      if (!document.getElementById('adminCompetitionsRoot')) return;
+      this.cacheEls();
+      this.bind();
+      var me = this;
+      window.addEventListener(this.adminEvt(), function () {
+        me.syncGate();
+      });
+      this.syncGate();
+    },
+  };
+
+  return { init: function () { self.init(); } };
+})();

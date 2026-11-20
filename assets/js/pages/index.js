@@ -1,0 +1,327 @@
+// Home Page — carousel cards for each current competition (league KO stages omitted; shown on parent league card).
+
+var IndexPage = {
+  _carouselIndex: 0,
+  _controlsBound: false,
+
+  viewport: function () {
+    return document.getElementById('home-carousel-viewport');
+  },
+
+  track: function () {
+    return document.getElementById('home-carousel-track');
+  },
+
+  slides: function () {
+    var track = IndexPage.track();
+    return track ? track.querySelectorAll('.home-carousel__slide') : [];
+  },
+
+  /** Rows arrive already ranked by the server; leaders tie only when every sort key is equal. */
+  topPlayersLabel: function (rows) {
+    rows = rows || [];
+    if (!rows.length) return 'N/A';
+    var key = function (r) {
+      return [r.Pts, r['Sets +/-'], r['Games +/-']].join('|');
+    };
+    var top = key(rows[0]);
+    var leaders = rows.filter(function (r) {
+      return key(r) === top;
+    });
+    if (!rows[0].P) return 'No matches played yet';
+    if (leaders.length === 1) return leaders[0]['Player Name'];
+    return (
+      leaders
+        .map(function (r) {
+          return r['Player Name'];
+        })
+        .join(' & ') + ' (tied)'
+    );
+  },
+
+  buildLadderCard: function (comp, rows) {
+    var card = document.createElement('article');
+    card.className = 'home-comp-card home-comp-card--ladder';
+    card.setAttribute('data-comp-id', comp.compId);
+    card.setAttribute('data-help', 'home.card');
+    var html = '<p class="align-center home-comp-card__subtitle">Ladder &mdash; top five</p>';
+    if (!(rows || []).length) {
+      html += '<p class="align-center"><em>Nobody on the ladder yet</em></p>';
+    } else {
+      html += '<ol class="home-ladder-list">';
+      rows.slice(0, 5).forEach(function (r) {
+        html +=
+          '<li><span class="home-ladder-list__pos">' + r.position + '</span>' +
+          '<span class="home-ladder-list__name">' + IndexPage.esc(r.name) + '</span></li>';
+      });
+      html += '</ol>';
+      html += '<p class="align-center"><a href="ladder.html?comp=' + encodeURIComponent(comp.compId) + '">Full ladder</a></p>';
+    }
+    card.innerHTML = html;
+    return card;
+  },
+
+  buildLeagueCard: function (comp, groups) {
+    var card = document.createElement('article');
+    card.className = 'home-comp-card home-comp-card--league';
+    card.setAttribute('data-comp-id', comp.compId);
+    card.setAttribute('data-help', 'home.card');
+
+    var html = '';
+    html += '<p class="align-center home-comp-card__subtitle">League stage &mdash; current leaders</p>';
+
+    (groups || []).forEach(function (grp) {
+      var label = IndexPage.topPlayersLabel(grp.rows || []);
+      html += '<div class="home-leader-group">';
+      html +=
+        '<h3 class="align-center"><span class="home-leader-group__name">' +
+        IndexPage.esc(grp.name || grp.groupId) +
+        '</span></h3>';
+      html +=
+        '<h3 class="align-center"><span class="home-comp-card__leader">' +
+        IndexPage.esc(label) +
+        '</span></h3>';
+      html += '</div>';
+    });
+
+    if (!(groups || []).length) {
+      html += '<p class="align-center"><em>No groups yet</em></p>';
+    }
+
+    card.innerHTML = html;
+    return card;
+  },
+
+  buildKnockoutCard: function (comp, fixtures) {
+    var card = document.createElement('article');
+    card.className = 'home-comp-card home-comp-card--knockout';
+    card.setAttribute('data-comp-id', comp.compId);
+    card.setAttribute('data-help', 'home.card');
+
+    var bracket = document.createElement('div');
+    bracket.className = 'home-comp-card__bracket ko-bracket-page';
+    card.appendChild(bracket);
+
+    if (typeof KnockoutBracket !== 'undefined') {
+      KnockoutBracket.render(bracket, fixtures, {
+        stageNav: true,
+        doubleElim:
+          typeof CurrentCompetition !== 'undefined' &&
+          CurrentCompetition.isDoubleEliminatorComp &&
+          CurrentCompetition.isDoubleEliminatorComp(comp),
+      });
+    } else {
+      bracket.innerHTML = '<p class="align-center"><em>Bracket unavailable.</em></p>';
+    }
+
+    return card;
+  },
+
+  esc: function (s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  },
+
+  loadCardData: async function (comp) {
+    if (CurrentCompetition.isLadderComp(comp)) {
+      var ladder = await ApiClient.get({ action: 'getLadder', comp: comp.compId });
+      return IndexPage.buildLadderCard(comp, ladder.rows || []);
+    }
+    if (CurrentCompetition.isKnockoutComp(comp)) {
+      var fxKo = await ApiClient.get({ action: 'getFixtures', comp: comp.compId });
+      return IndexPage.buildKnockoutCard(comp, fxKo.fixtures || []);
+    }
+
+    var koComp = CurrentCompetition.findAssociatedKnockout(comp);
+    if (koComp) {
+      var koFx = await ApiClient.get({ action: 'getFixtures', comp: koComp.compId });
+      if ((koFx.fixtures || []).length) {
+        return IndexPage.buildKnockoutCard(comp, koFx.fixtures || []);
+      }
+    }
+
+    var st = await ApiClient.get({ action: 'getStandings', comp: comp.compId });
+    return IndexPage.buildLeagueCard(comp, st.groups || []);
+  },
+
+  renderCarousel: async function () {
+    var track = document.getElementById('home-carousel-track');
+    if (!track) return;
+
+    var comps = CurrentCompetition.carouselComps();
+    track.innerHTML = '';
+
+    if (!comps.length) {
+      track.innerHTML = '<p class="align-center"><em>No current competitions.</em></p>';
+      IndexPage.updateCompHeader();
+      return;
+    }
+
+    var cards = await Promise.all(
+      comps.map(function (comp) {
+        return IndexPage.loadCardData(comp);
+      })
+    );
+
+    cards.forEach(function (card) {
+      var slide = document.createElement('div');
+      slide.className = 'home-carousel__slide';
+      slide.appendChild(card);
+      track.appendChild(slide);
+    });
+
+    var selectedId = CurrentCompetition.getCompId();
+    var startIdx = comps.findIndex(function (c) {
+      return c.compId === selectedId;
+    });
+    IndexPage._carouselIndex = startIdx >= 0 ? startIdx : 0;
+    IndexPage.updateCompHeader();
+    IndexPage.bindCarouselControls();
+    IndexPage.updateCarouselPosition(false);
+    IndexPage.relayoutKnockoutBrackets();
+  },
+
+  updateCompHeader: function () {
+    var el = document.getElementById('home-carousel-comp-title');
+    var comps = CurrentCompetition.carouselComps();
+    if (!el) return;
+    if (!comps.length) {
+      el.textContent = '';
+      return;
+    }
+    var comp = comps[IndexPage._carouselIndex];
+    el.textContent = comp && comp.name ? comp.name : '';
+  },
+
+  bindCarouselControls: function () {
+    if (IndexPage._controlsBound) return;
+    IndexPage._controlsBound = true;
+
+    var prev = document.getElementById('home-carousel-prev');
+    var next = document.getElementById('home-carousel-next');
+    if (prev) {
+      prev.addEventListener('click', function () {
+        IndexPage.goToSlide(IndexPage._carouselIndex - 1, true);
+      });
+    }
+    if (next) {
+      next.addEventListener('click', function () {
+        IndexPage.goToSlide(IndexPage._carouselIndex + 1, true);
+      });
+    }
+
+    window.addEventListener('resize', function () {
+      IndexPage.updateCarouselPosition(false);
+    });
+  },
+
+  syncViewportHeight: function () {
+    var viewport = IndexPage.viewport();
+    var slides = IndexPage.slides();
+    if (!viewport || !slides.length) return;
+    var slide = slides[IndexPage._carouselIndex];
+    if (!slide) return;
+    viewport.style.height = slide.offsetHeight + 'px';
+  },
+
+  updateArrows: function () {
+    var comps = CurrentCompetition.carouselComps();
+    var prev = document.getElementById('home-carousel-prev');
+    var next = document.getElementById('home-carousel-next');
+    var count = comps.length;
+    var idx = IndexPage._carouselIndex;
+
+    if (prev) {
+      var showPrev = count > 1 && idx > 0;
+      prev.classList.toggle('is-unavailable', !showPrev);
+      prev.disabled = !showPrev;
+      prev.setAttribute('aria-hidden', showPrev ? 'false' : 'true');
+    }
+    if (next) {
+      var showNext = count > 1 && idx < count - 1;
+      next.classList.toggle('is-unavailable', !showNext);
+      next.disabled = !showNext;
+      next.setAttribute('aria-hidden', showNext ? 'false' : 'true');
+    }
+  },
+
+  scrollPageToTop: function () {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  },
+
+  goToSlide: function (index, syncCompetition) {
+    var track = IndexPage.track();
+    var comps = CurrentCompetition.carouselComps();
+    if (!track || !comps.length) return;
+
+    var max = comps.length - 1;
+    var next = Math.max(0, Math.min(index, max));
+    if (next === IndexPage._carouselIndex && !syncCompetition) {
+      IndexPage.syncViewportHeight();
+      IndexPage.updateArrows();
+      return;
+    }
+    IndexPage._carouselIndex = next;
+    IndexPage.updateCarouselPosition(true);
+
+    if (syncCompetition) {
+      CurrentCompetition.setCompId(comps[next].compId);
+    }
+
+    IndexPage.scrollPageToTop();
+  },
+
+  updateCarouselPosition: function (animate) {
+    var track = IndexPage.track();
+    var viewport = IndexPage.viewport();
+    var slides = IndexPage.slides();
+    if (!track || !viewport) return;
+
+    var slideWidth = viewport.offsetWidth;
+    slides.forEach(function (slide) {
+      slide.style.flexBasis = slideWidth + 'px';
+      slide.style.width = slideWidth + 'px';
+    });
+
+    track.style.transition = animate ? 'transform 0.35s ease' : 'none';
+    track.style.transform = 'translateX(-' + IndexPage._carouselIndex * slideWidth + 'px)';
+
+    window.requestAnimationFrame(function () {
+      IndexPage.syncViewportHeight();
+      IndexPage.updateArrows();
+      IndexPage.updateCompHeader();
+      IndexPage.relayoutKnockoutBrackets();
+    });
+  },
+
+  relayoutKnockoutBrackets: function () {
+    if (typeof KnockoutBracket === 'undefined' || !KnockoutBracket.relayout) return;
+    var slide = IndexPage.slides()[IndexPage._carouselIndex];
+    if (!slide) return;
+    slide.querySelectorAll('.home-comp-card__bracket').forEach(function (bracket) {
+      KnockoutBracket.relayout(bracket);
+    });
+  },
+
+  init: async function () {
+    var root = document.getElementById('home-carousel');
+    if (!root) return;
+
+    await CurrentCompetition.whenReady(function () {
+      return IndexPage.renderCarousel();
+    });
+
+    window.addEventListener(CurrentCompetition.EVENT_NAME, function (ev) {
+      var comps = CurrentCompetition.carouselComps();
+      var idx = comps.findIndex(function (c) {
+        return c.compId === (ev.detail && ev.detail.compId);
+      });
+      if (idx >= 0 && idx !== IndexPage._carouselIndex) {
+        IndexPage.goToSlide(idx, false);
+      }
+    });
+  },
+};

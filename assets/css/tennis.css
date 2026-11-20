@@ -1,0 +1,500 @@
+/* Ierne Tennis — styles for tennis-specific UI.
+   Palette: court green #1F6B45, lighter green #2E7D4F, ball yellow-green #C9DC2A,
+   clay #C0643C (pending approval). */
+
+:root {
+  --court-green: #1f6b45;
+  --court-green-light: #2e7d4f;
+  --ball: #c9dc2a;
+  --clay: #c0643c;
+}
+
+/* ---------- Hero artwork ---------- */
+
+.hero__image-wrapper img[src$='.svg'] {
+  object-fit: cover;
+  background: var(--court-green);
+}
+
+#page-competition-name {
+  color: var(--court-green-light);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* ---------- Fixture and result lists ---------- */
+
+.fixture-week-heading {
+  margin: 1.5em 0 0.5em;
+  font-weight: bold;
+  text-align: center;
+}
+
+.fixture-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1em;
+  margin: 0.3em 0;
+  font-size: 1.05em;
+}
+
+.result-row {
+  gap: 0.6em;
+}
+
+.fixture-player-name--winner {
+  font-weight: 700;
+}
+
+.results-score,
+.results-score-btn {
+  flex: 0 0 auto;
+  min-width: 6.5em;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-size: 0.95em;
+}
+
+.fixture-play-by {
+  margin: -0.15em 0 0.6em;
+  text-align: center;
+  font-size: 0.85em;
+  color: var(--gray, #57585a);
+}
+
+/* ---------- Set-by-set result entry ---------- */
+
+.fixture-result-form > .fixture-result-format,
+.fixture-result-form > .tennis-score,
+.fixture-result-form > .fixture-result-clear-row {
+  grid-column: 1 / -1;
+}
+
+.fixture-result-format {
+  margin: 0;
+  font-size: 0.9em;
+  color: var(--gray, #57585a);
+}
+
+.tennis-score {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tennis-score__head,
+.tennis-set {
+  display: grid;
+  grid-template-columns: 5.6rem minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.5rem;
+}
+
+.tennis-score__head .fixture-result-player-name {
+  grid-column: auto !important;
+  font-size: 1.05rem !important;
+  text-align: center !important;
+  justify-self: center !important;
+  overflow-wrap: anywhere;
+}
+
+.fixture-result-player-name--winner {
+  color: var(--court-green);
+}
+
+.fixture-result-player-name--loser {
+  opacity: 0.7;
+}
+
+.tennis-set {
+  padding: 0.35rem 0;
+  border-top: 1px solid rgba(127, 127, 127, 0.25);
+}
+
+.tennis-set__label {
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.tennis-set__label small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.75em;
+  color: var(--gray, #57585a);
+}
+
+.tennis-set--done .tennis-set__label {
+  color: var(--court-green-light);
+}
+
+.tennis-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.tennis-stepper__num {
+  min-width: 1.6em;
+  text-align: center;
+  font-size: 1.45rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tennis-stepper__btn {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(127, 127, 127, 0.45);
+  background: transparent;
+  color: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tennis-stepper__btn--inc {
+  border: none;
+}
+
+.tennis-stepper__btn .tennis-ball-svg {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: block;
+}
+
+.tennis-stepper__btn:focus-visible {
+  outline: 3px solid var(--ball);
+  outline-offset: 2px;
+}
+
+.tennis-set__tb {
+  grid-column: 2 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.9em;
+}
+
+.tennis-set__tb small {
+  color: var(--gray, #57585a);
+}
+
+.tennis-set__tb-input {
+  width: 3.4em;
+  text-align: center;
+}
+
+.tennis-score__line {
+  margin: 0.2rem 0 0;
+  text-align: center;
+  font-weight: 600;
+  min-height: 1.2em;
+}
+
+.fixture-result-clear-row {
+  margin: 0;
+  text-align: center;
+}
+
+.fixture-result-clear {
+  background: none;
+  border: none;
+  color: var(--clay);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+/* ---------- Standings table ---------- */
+
+.standings-table-wrap {
+  overflow-x: auto;
+}
+
+.standings-table {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.standings-table th,
+.standings-table td {
+  padding: 0.35em 0.4em;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+  text-align: left;
+}
+
+.standings-table th {
+  font-size: 0.85em;
+  color: var(--gray, #57585a);
+}
+
+.standings-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.standings-table .pts {
+  font-weight: 700;
+}
+
+.standings-table tbody tr:first-child td {
+  background: rgba(201, 220, 42, 0.18);
+}
+
+.standings-row--unapproved td {
+  color: var(--clay);
+}
+
+.standings-points-note {
+  text-align: center;
+  font-size: 0.85em;
+  color: var(--gray, #57585a);
+}
+
+/* ---------- Ladder ---------- */
+
+.ladder-rules {
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--gray, #57585a);
+}
+
+.ladder-list {
+  list-style: none;
+  margin: 1em auto;
+  padding: 0;
+  max-width: 34rem;
+}
+
+.ladder-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.4rem;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+}
+
+.ladder-row--me {
+  background: rgba(201, 220, 42, 0.18);
+}
+
+.ladder-row__pos {
+  flex: 0 0 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--court-green);
+  color: #fff;
+  font-weight: 700;
+}
+
+.ladder-row__main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ladder-row__name {
+  font-weight: 600;
+}
+
+.ladder-row__record,
+.ladder-row__challenge {
+  font-size: 0.85em;
+  color: var(--gray, #57585a);
+}
+
+.ladder-row__challenge {
+  color: var(--clay);
+}
+
+.ladder-row__btn {
+  flex: 0 0 auto;
+  padding: 0.35em 0.8em;
+  border-radius: 999px;
+  border: 1px solid var(--court-green);
+  background: var(--court-green);
+  color: #fff;
+  cursor: pointer;
+}
+
+.ladder-row__btn--cancel {
+  background: transparent;
+  color: var(--clay);
+  border-color: var(--clay);
+}
+
+.ladder-admin {
+  max-width: 34rem;
+  margin: 2em auto 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.ladder-admin label {
+  display: grid;
+  gap: 0.2rem;
+}
+
+/* ---------- Home ---------- */
+
+.home-leader-group__name {
+  color: var(--court-green-light);
+}
+
+.home-ladder-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5em auto 1em;
+  max-width: 22rem;
+}
+
+.home-ladder-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+}
+
+.home-ladder-list__pos {
+  flex: 0 0 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ball);
+  color: #17181e;
+  font-weight: 700;
+}
+
+.home-ladder-list__name {
+  font-weight: 600;
+}
+
+/* ---------- Rules ---------- */
+
+.rules-comp h3 {
+  margin-bottom: 0.3em;
+  color: var(--court-green-light);
+}
+
+/* ---------- Admin additions ---------- */
+
+.admin-fieldset {
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.8rem 0;
+}
+
+.admin-fieldset legend {
+  padding: 0 0.35rem;
+  font-weight: 600;
+}
+
+.admin-fieldset .admin-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.admin-form-row__field--narrow input {
+  width: 5em;
+}
+
+.admin-form-row__field--button {
+  align-self: flex-end;
+}
+
+.admin-player-picks__hint--warn {
+  color: var(--clay);
+}
+
+.admin-ladder-order {
+  padding-left: 1.6em;
+}
+
+.admin-ladder-order__row span:last-child {
+  display: inline-flex;
+  gap: 0.3rem;
+  margin-left: 0.6rem;
+}
+
+.admin-ladder-order__row {
+  padding: 0.2rem 0;
+}
+
+.admin-fixtures-list__cancel {
+  margin-left: 0.6rem;
+}
+
+.btn-small {
+  padding: 0.2em 0.6em;
+  font-size: 0.85em;
+}
+
+/* ---------- Shared overlays and footer ---------- */
+
+/* Admin modals use z-index up to 1200; keep the busy overlay above them. */
+.working-indicator {
+  --working-z: 10040;
+}
+
+.footer__credit {
+  color: var(--court-green-light);
+}
+
+/* ---------- Fixes from the browser check ---------- */
+
+/* Hero titles sit on dark court artwork. */
+.hero__content h1 {
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+
+/* Site button styles otherwise override the hidden attribute. */
+.fixture-result-clear[hidden],
+.ladder-row__btn[hidden] {
+  display: none !important;
+}
+
+/* Admin dialogs: let field rows wrap on narrow screens. */
+.admin-form-row--type-current,
+.admin-ls-pairs .admin-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.admin-ls-pairs .admin-form-row__field--grow {
+  flex: 1 1 10rem;
+}
+
+.admin-ls-pairs select {
+  width: 100%;
+}
+
+.admin-form-row__field--button .btn {
+  white-space: nowrap;
+}
+
+.admin-form-row--type-current select {
+  min-width: 10rem;
+}

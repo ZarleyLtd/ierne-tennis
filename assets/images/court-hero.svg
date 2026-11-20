@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1456 816" width="1456" height="816" role="img" aria-label="Tennis court seen from above">
+  <defs>
+    <linearGradient id="surround" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#174f34"/>
+      <stop offset="1" stop-color="#1f6b45"/>
+    </linearGradient>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2e7d4f"/>
+      <stop offset="1" stop-color="#29734a"/>
+    </linearGradient>
+    <radialGradient id="ball" cx="0.38" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#e6f27a"/>
+      <stop offset="0.7" stop-color="#c9dc2a"/>
+      <stop offset="1" stop-color="#9aa82a"/>
+    </radialGradient>
+  </defs>
+  <rect width="1456" height="816" fill="url(#surround)"/>
+  <!-- Court (horizontal, doubles width), 78ft x 36ft scaled -->
+  <g transform="translate(188 168)">
+    <rect x="-24" y="-24" width="1128" height="528" rx="6" fill="url(#surface)"/>
+    <g fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="miter">
+      <rect x="0" y="0" width="1080" height="480"/>
+      <line x1="0" y1="60" x2="1080" y2="60"/>
+      <line x1="0" y1="420" x2="1080" y2="420"/>
+      <line x1="290" y1="60" x2="290" y2="420"/>
+      <line x1="790" y1="60" x2="790" y2="420"/>
+      <line x1="290" y1="240" x2="790" y2="240"/>
+      <line x1="0" y1="240" x2="16" y2="240"/>
+      <line x1="1064" y1="240" x2="1080" y2="240"/>
+    </g>
+    <!-- Net -->
+    <line x1="540" y1="-36" x2="540" y2="516" stroke="#f4f4f4" stroke-width="10"/>
+    <line x1="540" y1="-36" x2="540" y2="516" stroke="#17181e" stroke-width="3" stroke-dasharray="6 6" opacity="0.55"/>
+    <circle cx="540" cy="-40" r="9" fill="#17181e"/>
+    <circle cx="540" cy="520" r="9" fill="#17181e"/>
+  </g>
+  <!-- Ball with a faint flight path -->
+  <path d="M 300 700 Q 700 420 1180 690" fill="none" stroke="#c9dc2a" stroke-width="4" stroke-dasharray="2 16" stroke-linecap="round" opacity="0.7"/>
+  <g transform="translate(1180 690)">
+    <ellipse cx="6" cy="34" rx="26" ry="8" fill="#000" opacity="0.18"/>
+    <circle r="28" fill="url(#ball)"/>
+    <path d="M -19 -20 C -6 -8 -6 8 -19 20 M 19 -20 C 6 -8 6 8 19 20" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,0 +1,363 @@
+/* Scorecard photo, entered-by line, tappable names, best-of field, group filter. */
+
+.fixture-player-name {
+  cursor: pointer;
+}
+
+.fixture-player-name:focus-visible {
+  outline: 2px solid var(--color);
+  outline-offset: 2px;
+}
+
+.fixture-entered-by {
+  margin: -0.15rem 0 0.65rem;
+  padding: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--gray);
+  line-height: 1.3;
+}
+
+.fixture-result-entered-by {
+  margin: -0.15rem 0 0.65rem;
+  padding: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--gray);
+  line-height: 1.3;
+}
+
+.fixture-result-approved-by {
+  margin-top: -0.45rem;
+}
+
+.league-label.is-selected {
+  font-weight: 700;
+  border: 3px solid #2E7D4F;
+  border-radius: 4px;
+}
+
+.admin-fixture-dialog__field--best-of {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.admin-fixture-dialog__best-of {
+  width: 3.25rem;
+  min-width: 3.25rem;
+  padding-left: 0.45rem;
+  padding-right: 0.45rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.admin-fixture-dialog__best-of::-webkit-outer-spin-button,
+.admin-fixture-dialog__best-of::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.admin-fixture-dialog__round-best-of {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.result-slip-btn {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  height: 2.6rem;
+  min-width: 2.6rem;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--light);
+  border-radius: calc(var(--border-radius) * 4);
+  background: var(--page-bg);
+  color: var(--dark);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-slip-btn--has-image {
+  padding: 0;
+}
+
+.result-slip-btn__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.result-slip-btn__spinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.result-slip-btn .spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--white);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: result-slip-spin 0.7s linear infinite;
+}
+
+@keyframes result-slip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.result-slip-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.result-slip-menu-overlay,
+.result-slip-lightbox {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1rem;
+}
+
+.result-slip-lightbox {
+  align-items: center;
+}
+
+.result-slip-menu-card,
+.result-slip-lightbox__content {
+  width: min(100%, 22rem);
+  background: var(--page-bg);
+  color: var(--text-color);
+  border-radius: calc(var(--border-radius) * 4);
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.result-slip-menu-btn,
+.result-slip-menu-cancel {
+  width: 100%;
+  margin: 0;
+}
+
+.result-slip-menu-btn--danger {
+  border-color: var(--warning-color);
+  color: var(--warning-color);
+}
+
+.result-slip-lightbox__img {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  background: var(--lighter);
+}
+
+.result-slip-lightbox__close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+}
+
+.result-slip-lightbox__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.fixture-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+/* Enter result dialog — same grid as PubliiCrossguns. */
+.fixture-result-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 0.75rem;
+  row-gap: 0.55rem;
+  align-items: center;
+  padding-left: 0.2rem;
+}
+
+.fixture-result-form > input[type='hidden'] {
+  display: none;
+}
+
+.fixture-result-form > .fixture-result-approve,
+.fixture-result-form > .fixture-result-dialog__heading,
+.fixture-result-form > .fixture-result-entered-by,
+.fixture-result-form > .fixture-result-approved-by,
+.fixture-result-form > .fixture-result-date-row,
+.fixture-result-form > #fixture-result-msg,
+.fixture-result-form > .fixture-result-actions {
+  grid-column: 1 / -1;
+}
+
+.fixture-result-date-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 10rem;
+}
+
+.fixture-result-date-controls #fixture-result-date {
+  flex: 1;
+  min-width: 8rem;
+  width: auto;
+  background-color: var(--page-bg);
+  border: 1px solid var(--light);
+  color: var(--text-color);
+  padding: calc(var(--baseline) * 1.2) calc(var(--baseline) * 3);
+}
+
+.fixture-result-date-row input.fixture-result-date-picker {
+  position: relative;
+  box-sizing: border-box;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  height: 2.5rem;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--light);
+  background-color: var(--page-bg);
+  color: transparent;
+  color-scheme: light dark;
+  cursor: pointer;
+}
+
+.fixture-result-date-picker::-webkit-datetime-edit,
+.fixture-result-date-picker::-webkit-datetime-edit-fields-wrapper,
+.fixture-result-date-picker::-webkit-datetime-edit-text,
+.fixture-result-date-picker::-webkit-datetime-edit-month-field,
+.fixture-result-date-picker::-webkit-datetime-edit-day-field,
+.fixture-result-date-picker::-webkit-datetime-edit-year-field {
+  display: none;
+}
+
+.fixture-result-date-picker::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  cursor: pointer;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.fixture-result-dialog .fixture-result-player-block {
+  display: contents;
+  margin: 0;
+}
+
+.fixture-result-dialog .fixture-result-player-name {
+  grid-column: 1;
+  justify-self: start;
+  text-align: left;
+  align-self: center;
+  flex: none;
+  max-width: none;
+  min-width: 0;
+  font-variation-settings: 'wght' var(--font-weight-bold);
+  font-size: clamp(1.28rem, 1.14rem + 0.55vw, 1.55rem);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.fixture-result-dialog .fixture-result-btn {
+  width: 7rem !important;
+  min-width: 7rem !important;
+  max-width: 7rem !important;
+  flex: 0 0 7rem !important;
+}
+
+.fixture-result-approve[hidden],
+#fixture-result-save[hidden] {
+  display: none !important;
+}
+
+.fixture-result-approve {
+  justify-self: end;
+  margin: 0;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid #2E7D4F;
+  border-radius: calc(var(--border-radius) * 4);
+  background: #2E7D4F;
+  color: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.fixture-result-approve:hover,
+.fixture-result-approve:focus {
+  background: #127a66;
+  border-color: #127a66;
+  color: #fff;
+}
+
+.fixture-vs-btn.is-unapproved,
+.fixture-vs-static.is-unapproved,
+.results-score-btn.is-unapproved,
+.results-score.is-unapproved {
+  color: #C0643C !important;
+  border-color: #C0643C !important;
+  box-shadow: 0 0 0 2px rgba(192, 100, 60, 0.35);
+}
+
+.standings-line--unapproved {
+  color: #2E7D4F;
+}
+
+.standings-pending-note {
+  margin: 0.35rem 0 1rem;
+  padding: 0;
+  text-align: left;
+  color: #2E7D4F;
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+.fixture-result-dialog .result-slip-btn {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  max-width: 2.75rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  max-height: 2.75rem;
+  flex: 0 0 2.75rem;
+}
