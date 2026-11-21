@@ -1010,14 +1010,14 @@
 .admin-modal--dark .btn.btn-secondary,
 .admin-modal--dark .admin-section-header .btn {
   background: transparent;
-  border: 1px solid var(--white);
-  color: var(--white);
+  border: 1px solid var(--text-color);
+  color: var(--text-color);
 }
 
 .admin-modal--dark .btn.btn-save:hover,
 .admin-modal--dark .btn.btn-secondary:hover,
 .admin-modal--dark .admin-section-header .btn:hover {
-  background: var(--white);
+  background: var(--text-color);
   color: var(--page-bg);
 }
 

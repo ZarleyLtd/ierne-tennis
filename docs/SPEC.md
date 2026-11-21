@@ -107,7 +107,7 @@ There are no bulk-load pages.
 
 - The Ierne crest is the home button.
 - Court green is the accent and ball yellow-green the highlight; pending items are clay.
-- The hero images are original court-line artwork, so there are no licensing questions. Club photos can replace `assets/images/court-hero.svg` and `court-banner.svg` later.
+- The hero images are original court-line artwork, so there are no licensing questions. Every page uses `assets/images/court-hero.svg`; a club photo can replace it later.
 - App icons are the crest on court green.
 
 ## Technical design

@@ -397,16 +397,39 @@
 
 /* ---------- Admin additions ---------- */
 
-.admin-fieldset {
-  border: 1px solid rgba(127, 127, 127, 0.35);
-  border-radius: 6px;
-  padding: 0.6rem 0.8rem;
-  margin: 0.8rem 0;
+/* Manage Comps dialog: each section is a card with a strong court-green edge,
+   so match format, points, pairs, groups and entrants read as separate blocks. */
+:root {
+  --admin-section-border: 2px solid rgba(46, 125, 79, 0.75);
+}
+
+.admin-fieldset,
+.admin-ls-manage > div {
+  border: var(--admin-section-border);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem 0.8rem;
+  margin: 1rem 0;
 }
 
 .admin-fieldset legend {
-  padding: 0 0.35rem;
-  font-weight: 600;
+  padding: 0 0.4rem;
+  font-weight: 700;
+  color: var(--court-green-light);
+}
+
+.admin-modal--dark .admin-ls-manage {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.admin-ls-manage__heading {
+  font-weight: 700;
+  color: var(--court-green-light) !important;
+}
+
+.admin-modal--dark .admin-form-actions {
+  border-top: var(--admin-section-border);
 }
 
 .admin-fieldset .admin-form-row {
@@ -497,4 +520,223 @@
 
 .admin-form-row--type-current select {
   min-width: 10rem;
+}
+
+/* Bracket scores: one fixed-width cell per set so 10-point tie-breaks stay in line. */
+.ko-bracket-match__score {
+  display: inline-flex;
+  justify-content: flex-end;
+  gap: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ko-bracket-match__set {
+  display: inline-block;
+  min-width: 1.35em;
+  text-align: center;
+}
+
+/* Manage Fixtures: names either side of a fixed centre column, so every V lines up. */
+.admin-fixtures-list__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.75em;
+  row-gap: 0.1em;
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.admin-fixtures-list__player-a {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.admin-fixtures-list__player-b {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.admin-fixtures-list__row > .admin-fixtures-list__cancel {
+  grid-column: 1 / -1;
+  justify-self: center;
+  margin-left: 0;
+}
+
+/* Hero: the artwork fills the whole banner (no grey strip below it on wide screens),
+   and the title sits a little above centre. */
+.hero__image-wrapper img,
+.hero__image img {
+  height: 100%;
+}
+
+.hero__content {
+  padding: 1.5em 1em 4em;
+}
+
+.hero__content h1 {
+  margin: 0;
+}
+
+/* Admin Mode on desktop: the admin links get their own tidy row under the public
+   links, instead of wrapping wherever they happen to run out of room. */
+@media all and (min-width: 56.25em) {
+  .navbar .navbar__menu {
+    justify-content: flex-end;
+    align-items: center;
+    row-gap: 0.15rem;
+  }
+
+  .navbar .navbar__menu > li.nav-admin-break:not([hidden]) {
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  .navbar .navbar__menu > li.nav-admin-only:not(.nav-admin-break) {
+    font-size: 0.8rem;
+  }
+
+  .navbar .navbar__menu > li.nav-admin-only:not(.nav-admin-break) a {
+    color: var(--court-green-light);
+  }
+}
+
+@media all and (min-width: 56.25em) and (prefers-color-scheme: dark) {
+  .navbar .navbar__menu > li.nav-admin-only:not(.nav-admin-break) a {
+    color: #8fd3a8;
+  }
+}
+
+.navbar_mobile_overlay .nav-admin-break {
+  display: none !important;
+}
+
+/* ---------- Brackets and home cards follow the colour scheme ----------
+   The snooker theme drew these as black scoreboards in both schemes. Here they use
+   the page colours: light cards in light mode, dark cards in dark mode. */
+
+:root {
+  --ko-score: var(--court-green);
+  --ko-winner-bg: rgba(46, 125, 79, 0.14);
+  --ko-champion: var(--court-green);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ko-score: #8fd3a8;
+    --ko-winner-bg: rgba(46, 125, 79, 0.3);
+    --ko-champion: var(--ball);
+  }
+}
+
+.home-comp-card {
+  background: var(--lighter);
+  color: var(--text-color);
+  border: 1px solid var(--light);
+}
+
+.home-comp-card__subtitle {
+  color: var(--gray);
+}
+
+.home-comp-card__leader {
+  color: var(--headings-color);
+}
+
+.ko-bracket-match {
+  background: var(--page-bg);
+  color: var(--headings-color);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.ko-bracket-match__tag,
+.ko-bracket-match__row {
+  border-bottom-color: var(--light);
+}
+
+.ko-bracket-match__row--winner {
+  background: var(--ko-winner-bg);
+}
+
+.ko-bracket-match .ko-bracket-match__score {
+  color: var(--ko-score);
+}
+
+.ko-bracket-match--champion {
+  background: var(--ko-winner-bg);
+  border-color: var(--ko-champion);
+}
+
+.ko-bracket-match--champion .ko-bracket-match__name {
+  color: var(--ko-champion);
+}
+
+.home-carousel__arrow,
+.ko-bracket-shell__arrow {
+  background: var(--page-bg);
+}
+
+/* A bracket with a single match (just the Final) sits in the middle of the card. */
+.ko-bracket-shell__track:has(> .ko-bracket-stage:only-child) {
+  justify-content: center;
+}
+
+/* Admin dialog headers: ?, title and × on one centred line. */
+.admin-modal__header {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) 2.6rem;
+  align-items: center;
+}
+
+.admin-modal__header > * {
+  grid-row: 1;
+  order: 0;
+}
+
+.admin-modal__header > button.help-toggle[data-help-toggle] {
+  position: static;
+  order: 0;
+  grid-column: 1;
+  justify-self: start;
+  margin: 0;
+}
+
+.admin-modal__header h2 {
+  grid-column: 2;
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+
+.admin-modal__header > .admin-modal__close {
+  position: static;
+  transform: none;
+  margin: 0;
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* Manage Fixtures: played matches show their score on a line under the names. */
+.admin-fixtures-list__score {
+  grid-column: 1 / -1;
+  justify-self: center;
+  font-size: 0.85em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--court-green-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  .admin-fixtures-list__score {
+    color: #8fd3a8;
+  }
+}
+
+.admin-fixtures-list__score.is-unapproved {
+  color: var(--clay);
+}
+
+.admin-fixtures-list__row--played {
+  margin-bottom: 0.6em;
 }

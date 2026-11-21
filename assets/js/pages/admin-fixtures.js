@@ -613,6 +613,23 @@ var AdminFixturesPage = (function () {
         row.appendChild(playerA);
         row.appendChild(center);
         row.appendChild(playerB);
+
+        // Played matches show their score under the names, so they read differently from unplayed ones.
+        var resultText = String(f['Result'] || '').trim();
+        if (resultText) {
+          var pending = f.resultApproved === false;
+          var scoreLine = document.createElement('span');
+          scoreLine.className = 'admin-fixtures-list__score' + (pending ? ' is-unapproved' : '');
+          scoreLine.textContent = (f.setLine || resultText) + (pending ? ' (pending approval)' : '');
+          row.classList.add('admin-fixtures-list__row--played');
+          var sa = Number(f.scoreA);
+          var sb = Number(f.scoreB);
+          if (Number.isFinite(sa) && Number.isFinite(sb) && sa !== sb) {
+            (sa > sb ? playerA : playerB).classList.add('fixture-player-name--winner');
+          }
+          row.appendChild(scoreLine);
+          center.setAttribute('aria-label', 'Edit fixture: ' + nameA + ' vs ' + nameB + ', result ' + scoreLine.textContent);
+        }
         list.appendChild(row);
       });
     },

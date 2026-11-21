@@ -22,13 +22,21 @@ var KnockoutBracket = (function () {
   /** Games per set for one side, scoreboard style ("6 3 10"); falls back to sets won. */
   function slotGames(match, slot, setsWon) {
     var sets = Array.isArray(match.sets) ? match.sets : [];
-    if (!sets.length) return String(setsWon);
-    return sets
-      .map(function (s) {
-        if (s.mtb) return String(slot === 'a' ? s.tbA : s.tbB);
-        return String(slot === 'a' ? s.a : s.b);
-      })
-      .join(' ');
+    if (!sets.length) return [String(setsWon)];
+    return sets.map(function (s) {
+      if (s.mtb) return String(slot === 'a' ? s.tbA : s.tbB);
+      return String(slot === 'a' ? s.a : s.b);
+    });
+  }
+
+  /** One fixed-width cell per set, so the columns line up when a set reaches 10. */
+  function fillScore(el, values) {
+    values.forEach(function (v) {
+      var cell = document.createElement('span');
+      cell.className = 'ko-bracket-match__set';
+      cell.textContent = v;
+      el.appendChild(cell);
+    });
   }
 
   /** "Aoife Byrne / Brian Kelly" becomes "Byrne / Kelly" so doubles fit a bracket box. */
@@ -634,7 +642,11 @@ var KnockoutBracket = (function () {
 
       var score = document.createElement('span');
       score.className = 'ko-bracket-match__score';
-      score.textContent = sc.hasResult && row.score != null ? slotGames(match, row.slot, row.score) : '–';
+      if (sc.hasResult && row.score != null) {
+        fillScore(score, slotGames(match, row.slot, row.score));
+      } else {
+        score.textContent = '–';
+      }
       if (!sc.hasResult) score.setAttribute('aria-hidden', 'true');
 
       line.appendChild(nameEl);

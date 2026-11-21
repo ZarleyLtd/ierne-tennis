@@ -62,5 +62,5 @@ New GET actions go in the GET switch; new POST actions go in the right set and i
 - To change the backend endpoint, edit only `assets/js/config/app-config.js`.
 - Use relative paths only. No `localhost` URLs and no drive-letter paths in shipped files.
 - Never use `window.confirm`; use `ConfirmDialog`. Wrap work over ~500 ms in `WorkingIndicator`.
-- Images: original artwork lives in `assets/images/` (`court-hero.svg`, `court-banner.svg`). Club photos can replace them later; keep the same file names or update the hero `<img>` in each page.
+- Images: original artwork lives in `assets/images/` (`court-hero.svg`, the hero on every page). Club photos can replace them later; keep the same file names or update the hero `<img>` in each page.
 - Edison tickets: follow the shared rules in `C:\CursorSites\CLAUDE.md`.

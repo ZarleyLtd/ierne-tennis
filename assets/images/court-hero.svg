@@ -34,9 +34,9 @@
     <circle cx="540" cy="-40" r="9" fill="#17181e"/>
     <circle cx="540" cy="520" r="9" fill="#17181e"/>
   </g>
-  <!-- Ball with a faint flight path -->
-  <path d="M 300 700 Q 700 420 1180 690" fill="none" stroke="#c9dc2a" stroke-width="4" stroke-dasharray="2 16" stroke-linecap="round" opacity="0.7"/>
-  <g transform="translate(1180 690)">
+  <!-- Ball with a faint flight path. Heroes crop to the middle band of this image, so the ball sits near y=408. -->
+  <path d="M 280 770 Q 860 640 1200 425" fill="none" stroke="#c9dc2a" stroke-width="4" stroke-dasharray="2 16" stroke-linecap="round" opacity="0.7"/>
+  <g transform="translate(1200 425)">
     <ellipse cx="6" cy="34" rx="26" ry="8" fill="#000" opacity="0.18"/>
     <circle r="28" fill="url(#ball)"/>
     <path d="M -19 -20 C -6 -8 -6 8 -19 20 M 19 -20 C 6 -8 6 8 19 20" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
