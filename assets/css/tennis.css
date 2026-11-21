@@ -493,6 +493,7 @@
 }
 
 /* Site button styles otherwise override the hidden attribute. */
+.btn[hidden],
 .fixture-result-clear[hidden],
 .ladder-row__btn[hidden] {
   display: none !important;

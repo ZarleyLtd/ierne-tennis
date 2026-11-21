@@ -190,10 +190,20 @@ var AdminPlayerPage = (function () {
         active: me.el.active ? me.el.active.checked : true,
       };
       payload.playerId = me.playerId || PlayerSlug.slugify(name);
+      var saveBtn = me.el.form ? me.el.form.querySelector('button[type="submit"]') : null;
       ApiClient.post('upsertPlayer', payload)
         .then(function (res) {
           if (me.isCreateMode()) {
-            window.location.href = 'admin-player.html?playerId=' + encodeURIComponent((res && res.playerId) || payload.playerId);
+            // New player: confirm briefly beside Save, then go back to the players list.
+            var durationMs = 1000;
+            if (typeof BriefMessage !== 'undefined' && saveBtn) {
+              BriefMessage.show('Player Added', saveBtn, { durationMs: durationMs, disableElement: saveBtn });
+            } else {
+              durationMs = 0;
+            }
+            setTimeout(function () {
+              window.location.href = 'admin-players.html';
+            }, durationMs);
             return;
           }
           me.flash('Player saved.', false);

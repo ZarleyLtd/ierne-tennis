@@ -49,6 +49,7 @@ Each competition has:
 - The match ends when one side has won the sets it needs. There are no draws.
 - The browser checks scores as they are typed. The server checks them again and is the authority.
 - Clearing a result removes the score and any score-card photo, after a confirmation.
+- In a knockout or double-eliminator, a result cannot be cleared once either side has played a later round; clear the later result first. This applies to admins too. League and ladder results can always be cleared.
 - Results display as a set line from the left-hand side's view, for example `6-4 3-6 [10-8]` or `7-6(4) 6-2`. In a 7-6 set, the number in brackets is the loser's tiebreak points.
 
 ## Standings

@@ -529,6 +529,93 @@ var KnockoutRounds = (function () {
       return KO_BASE_SORT + this.sortKeyFor(code);
     },
 
+    /**
+     * Where a bracket round sits in play order (higher = played later), or null for
+     * rounds with no fixed place such as custom play-offs. Mirrors bracketRoundRank
+     * in the Edge Function's brackets.ts.
+     */
+    bracketRank: function (code) {
+      var c = String(code == null ? '' : code).trim().toUpperCase();
+      if (!c) return null;
+      if (/^L32-\d+$/.test(c)) return 1;
+      if (/^L16-\d+$/.test(c)) return 2;
+      if (/^QF\d+$/.test(c)) return 3;
+      if (/^SF\d+$/.test(c)) return 4;
+      if (c === 'F') return 5;
+      var m = c.match(/^W(\d+)-\d+$/);
+      if (m) return 100 + parseInt(m[1], 10);
+      if (c === 'WF') return 199;
+      m = c.match(/^L(\d+)-\d+$/);
+      if (m) return 200 + parseInt(m[1], 10);
+      if (c === 'LF') return 299;
+      if (c === 'GF') return 300;
+      if (c === 'GF-R') return 301;
+      if (/^KO PRE-/.test(c)) return 0;
+      m = c.match(/^KO LAST (\d+)$/);
+      if (m) {
+        var n = parseInt(m[1], 10);
+        if (n >= 2) return 6 - Math.log2(n);
+      }
+      return null;
+    },
+
+    /** "the Final", "Semi-final 2": names a round inside a sentence. Mirrors bracketRoundTitle. */
+    bracketRoundTitle: function (code, roundName) {
+      var named = String(roundName == null ? '' : roundName).trim();
+      if (named) return named;
+      var c = String(code == null ? '' : code).trim().toUpperCase();
+      var m;
+      if (c === 'F') return 'the Final';
+      if ((m = c.match(/^SF(\d+)$/))) return 'Semi-final ' + m[1];
+      if ((m = c.match(/^QF(\d+)$/))) return 'Quarter-final ' + m[1];
+      if ((m = c.match(/^L(16|32)-(\d+)$/))) return 'the round of ' + m[1];
+      if ((m = c.match(/^W(\d+)-\d+$/))) return 'Round ' + m[1];
+      if ((m = c.match(/^L(\d+)-\d+$/))) return 'Losers Round ' + m[1];
+      if (c === 'WF') return 'the Winners Final';
+      if (c === 'LF') return 'the Losers Final';
+      if (c === 'GF') return 'the Grand Final';
+      if (c === 'GF-R') return 'the Grand Final reset';
+      return c || 'a later round';
+    },
+
+    /**
+     * Why a bracket result cannot be cleared: either side already has a result in a
+     * later round of the same comp. Returns '' when clearing is fine. The Edge
+     * Function enforces the same rule.
+     */
+    laterResultBlockingClear: function (match, fixtures) {
+      if (!match || String(match['Stage'] || '') !== 'knockout') return '';
+      if (match.scoreA == null || match.scoreB == null) return '';
+      var rank = this.bracketRank(match['Game Week']);
+      if (rank == null) return '';
+      var self = this;
+      var sides = [match.playerAId, match.playerBId].filter(function (id) {
+        return id && !self.isBracketPlaceholderPlayerId(id) && !isByePlayerId(id);
+      });
+      if (!sides.length) return '';
+      var hit = null;
+      var hitRank = Infinity;
+      (fixtures || []).forEach(function (f) {
+        if (!f || f === match || f.fixtureId === match.fixtureId) return;
+        if (String(f['Stage'] || '') !== 'knockout') return;
+        if (f.scoreA == null || f.scoreB == null) return;
+        if (isByePlayerId(f.playerAId) || isByePlayerId(f.playerBId)) return;
+        if (sides.indexOf(f.playerAId) < 0 && sides.indexOf(f.playerBId) < 0) return;
+        var r = self.bracketRank(f['Game Week']);
+        if (r == null || r <= rank || r >= hitRank) return;
+        hit = f;
+        hitRank = r;
+      });
+      if (!hit) return '';
+      var name = sides.indexOf(hit.playerAId) >= 0 ? hit['Player A'] : hit['Player B'];
+      return (
+        (name || 'A player in this match') +
+        ' has already played ' +
+        this.bracketRoundTitle(hit['Game Week'], hit.roundName) +
+        '. Clear that result first.'
+      );
+    },
+
     isKnownCode: function (code) {
       return !!byCode[String(code == null ? '' : code).trim()];
     },

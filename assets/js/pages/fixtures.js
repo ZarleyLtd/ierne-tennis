@@ -807,7 +807,7 @@ var FixturesPage = {
    * Stores everything the result dialog needs on a row element, so the
    * Results page can reuse openResultDialog.
    */
-  setRowDataAttributes: function (div, match, nameA, nameB) {
+  setRowDataAttributes: function (div, match, nameA, nameB, fixtures) {
     div.setAttribute('data-fixture-id', String(match.fixtureId || '').trim());
     div.setAttribute('data-player-a-name', nameA);
     div.setAttribute('data-player-b-name', nameB);
@@ -827,6 +827,11 @@ var FixturesPage = {
     if (match.resultApprovedAt) div.setAttribute('data-result-approved-at', match.resultApprovedAt);
     if (this.isUnapprovedResult(match)) div.setAttribute('data-result-approved', 'false');
     if (match.scoreA != null && match.scoreB != null) div.setAttribute('data-had-result', '1');
+    var clearBlocked =
+      typeof KnockoutRounds !== 'undefined' && KnockoutRounds.laterResultBlockingClear
+        ? KnockoutRounds.laterResultBlockingClear(match, fixtures)
+        : '';
+    if (clearBlocked) div.setAttribute('data-clear-blocked', clearBlocked);
   },
 
   renderGroups: function (container, grouped, orderedWeeks, options) {
@@ -856,7 +861,7 @@ var FixturesPage = {
           nameA = self.knockoutPlayerLabel(match, 'a', winnersByCode, losersByCode, options.fixtures);
           nameB = self.knockoutPlayerLabel(match, 'b', winnersByCode, losersByCode, options.fixtures);
         }
-        self.setRowDataAttributes(div, match, nameA, nameB);
+        self.setRowDataAttributes(div, match, nameA, nameB, options.fixtures);
         var unapproved = self.isUnapprovedResult(match);
         var resultReady = self.fixtureResultReady(match, isKnockout, winnersByCode, losersByCode);
         div.setAttribute('data-result-ready', resultReady ? 'true' : 'false');
@@ -950,6 +955,7 @@ var FixturesPage = {
     var hadResult = rowEl.getAttribute('data-had-result');
     this._dialogOpenedWithResult = hadResult === '1' || hadResult === 'true';
     this.setResultDialogTitle(this._dialogOpenedWithResult);
+    this._clearBlockedReason = rowEl.getAttribute('data-clear-blocked') || '';
     var clearBtn = document.getElementById('fixture-result-clear');
     if (clearBtn) clearBtn.hidden = !this._dialogOpenedWithResult;
     var formatEl = document.getElementById('fixture-result-format');
@@ -1018,6 +1024,8 @@ var FixturesPage = {
   clearResultFromDialog: async function () {
     var fixtureId = document.getElementById('fixture-result-fixture-id').value;
     if (!fixtureId) throw new Error('Missing fixture');
+    // A bracket result stays once a player has gone on to play a later round.
+    if (this._clearBlockedReason) throw new Error(this._clearBlockedReason);
     if (!this.canEditFixture(this._openMembersA, this._openMembersB, this._openResultPostedAt || '')) {
       throw new Error('This result can no longer be changed by you.');
     }

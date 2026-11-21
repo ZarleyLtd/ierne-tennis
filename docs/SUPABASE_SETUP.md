@@ -94,7 +94,7 @@ GET requests take no custom headers. POST requests are `application/x-www-form-u
 | `connect` | public | `handle, password` → `sessionToken, account` |
 | `resetPassword` | public | `handle, resetCode, newPassword` |
 | `signOut`, `whoAmI` | session | none (session token on the envelope) |
-| `updateFixtureResult` | admin, approver, or a player in the match within 24 h | `fixtureId, sets[], matchDate?`. An empty `sets` clears the result. |
+| `updateFixtureResult` | admin, approver, or a player in the match within 24 h | `fixtureId, sets[], matchDate?`. An empty `sets` clears the result. A bracket result cannot be cleared (409) once either side has a result in a later round; clear the later one first. |
 | `getResultSlip`, `uploadResultSlip`, `commitResultSlip`, `discardResultSlipSession`, `removeResultSlip` | as above | `fixtureId` (+ `base64, mimeType` to upload) |
 | `createChallenge` | a signed-in player on the ladder, or an admin | `compId, defenderId`; admins may add `challengerId` |
 | `approveFixtureResult` | admin or approver | `fixtureId` |

@@ -58,6 +58,8 @@ import {
   KNOCKOUT_GROUP_ID,
   LOSER_OF_PREFIX,
   WINNER_OF_PREFIX,
+  bracketRoundRank,
+  bracketRoundTitle,
   generateDoubleElimFixtures,
   generateKnockoutFixtures,
   generateLeagueRoundRobin,
@@ -2032,6 +2034,40 @@ async function resultApprovedByLabel(envelope: PostEnvelope): Promise<string> {
 }
 
 /**
+ * A bracket result cannot be cleared once either side has a result in a later round of
+ * the same comp: the later match was only possible because of this one. Applies to
+ * everyone, admins included; clear the later match first. Leagues and ladders are not
+ * affected. Returns the reason, or null when clearing is fine.
+ */
+async function laterBracketResultBlockingClear(sql: Sql, fixture: BracketFixture): Promise<string | null> {
+  if (fixture.stage !== "knockout") return null;
+  const rank = bracketRoundRank(fixture.round_label);
+  if (rank == null) return null;
+  const sides = [fixture.side_a_id, fixture.side_b_id].filter((id) => id && !isInternalEntrantId(id));
+  if (!sides.length) return null;
+  const later = await sql<{ round_label: string; round_name: string | null; side_a_id: string; side_b_id: string }[]>`
+    select round_label, round_name, side_a_id, side_b_id
+      from ierne_tennis.fixtures
+     where competition_id = ${fixture.competition_id}
+       and stage = 'knockout'
+       and fixture_id <> ${fixture.fixture_id}::uuid
+       and score_a is not null and score_b is not null
+       and side_a_id <> ${BYE_ENTRANT_ID} and side_b_id <> ${BYE_ENTRANT_ID}
+       and (side_a_id = any(${sides}::text[]) or side_b_id = any(${sides}::text[]))
+  `;
+  const hit = later
+    .filter((f) => {
+      const r = bracketRoundRank(f.round_label);
+      return r != null && r > rank;
+    })
+    .sort((x, y) => (bracketRoundRank(x.round_label) ?? 0) - (bracketRoundRank(y.round_label) ?? 0))[0];
+  if (!hit) return null;
+  const who = sides.includes(hit.side_a_id) ? hit.side_a_id : hit.side_b_id;
+  const name = sideName(who, await loadEntrantMap([who])) || "A player in this match";
+  return `${name} has already played ${bracketRoundTitle(hit.round_label, hit.round_name)}. Clear that result first.`;
+}
+
+/**
  * Save, change or clear a result.
  * data: fixtureId, sets: [{a, b, tbA?, tbB?}] (empty list clears), optional matchDate.
  */
@@ -2063,6 +2099,10 @@ async function handleUpdateFixtureResult(envelope: PostEnvelope): Promise<Respon
   const clearing = totals.sets.length === 0;
   if (!clearing && (isInternalEntrantId(prior.side_a_id) || isInternalEntrantId(prior.side_b_id))) {
     return errorResponse("Both sides must be known before a result can be entered.");
+  }
+  if (clearing && prior.score_a != null && prior.score_b != null) {
+    const blocked = await laterBracketResultBlockingClear(sql, prior);
+    if (blocked) return errorResponse(blocked, 409);
   }
 
   const hasMatchDate = Object.prototype.hasOwnProperty.call(data, "matchDate");

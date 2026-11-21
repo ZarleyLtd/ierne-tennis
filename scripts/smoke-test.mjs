@@ -78,9 +78,17 @@ async function result(fixtureId, sets, opts) {
 async function cleanup() {
   console.log('\nCleaning up');
   for (const compId of created.comps.slice().reverse()) {
-    const fx = await fixtures(compId).catch(() => []);
-    for (const f of (fx || []).slice().reverse()) {
-      if (f.scoreA != null) await post('updateFixtureResult', { fixtureId: f.fixtureId, sets: [] });
+    // A bracket result can only be cleared once later rounds are cleared, so repeat
+    // until a pass clears nothing more.
+    for (let pass = 0; pass < 6; pass++) {
+      const fx = await fixtures(compId).catch(() => []);
+      let cleared = 0;
+      for (const f of (fx || []).slice().reverse()) {
+        if (f.scoreA == null) continue;
+        const r = await post('updateFixtureResult', { fixtureId: f.fixtureId, sets: [] });
+        if (r.success) cleared++;
+      }
+      if (!cleared) break;
     }
   }
   for (const compId of created.comps.slice().reverse()) {
@@ -186,6 +194,18 @@ async function main() {
   check(fin2.playerAId === 'wo:SF1', 'clearing restores the placeholder', fin2.playerAId);
   const early = await result(fin2.fixtureId, [{ a: 8, b: 2 }]);
   check(!early.success, 'final refused before both sides are known');
+
+  // A semi-final result cannot be cleared once a finalist has played the final.
+  const sf2 = fx.find((f) => f['Game Week'] === 'SF2');
+  check((await result(sf1.fixtureId, [{ a: 8, b: 6 }])).success, 'SF1 saved again');
+  check((await result(sf2.fixtureId, [{ a: 8, b: 3 }])).success, 'SF2 saved');
+  fin2 = (await fixtures('zz-test-ko')).find((f) => f['Game Week'] === 'F');
+  check((await result(fin2.fixtureId, [{ a: 8, b: 4 }])).success, 'final saved');
+  r = await result(sf1.fixtureId, []);
+  check(!r.success && /already played the Final/.test(r.error || ''), 'semi-final cannot be cleared after the final', r.error);
+  check((await result(fin2.fixtureId, [])).success, 'final cleared');
+  check((await result(sf1.fixtureId, [])).success, 'semi-final cleared once the final is cleared');
+  check((await result(sf2.fixtureId, [])).success, 'SF2 cleared');
 
   // ---------- Double-eliminator ----------
   console.log('Double-eliminator');

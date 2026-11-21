@@ -154,7 +154,7 @@ var ResultsPage = {
           nameA = FixturesPage.knockoutPlayerLabel(match, 'a', winnersByCode, losersByCode, options.fixtures);
           nameB = FixturesPage.knockoutPlayerLabel(match, 'b', winnersByCode, losersByCode, options.fixtures);
         }
-        FixturesPage.setRowDataAttributes(div, match, nameA, nameB);
+        FixturesPage.setRowDataAttributes(div, match, nameA, nameB, options.fixtures);
         var unapproved = FixturesPage.isUnapprovedResult(match);
         var aWon = Number(match.scoreA) > Number(match.scoreB);
         var line = match.setLine || String(match['Result'] || '').trim();

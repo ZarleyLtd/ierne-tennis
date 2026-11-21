@@ -493,3 +493,56 @@ export function generateLeagueRoundRobin(
   }
   return out;
 }
+
+/**
+ * Where a bracket round sits in play order: a higher rank is played later.
+ * Only the round matters (an entrant never plays twice in one round). Returns null
+ * for rounds with no fixed place, such as custom play-offs, which are then never
+ * treated as earlier or later than anything. Mirrors KnockoutRounds.bracketRank.
+ */
+export function bracketRoundRank(code: string | null | undefined): number | null {
+  const c = String(code ?? "").trim().toUpperCase();
+  if (!c) return null;
+  // Single knockout (L16/L32 are checked before the losers-round pattern below).
+  if (/^L32-\d+$/.test(c)) return 1;
+  if (/^L16-\d+$/.test(c)) return 2;
+  if (/^QF\d+$/.test(c)) return 3;
+  if (/^SF\d+$/.test(c)) return 4;
+  if (c === "F") return 5;
+  // Double-eliminator: winners rounds, then losers rounds, then the grand final.
+  let m = c.match(/^W(\d+)-\d+$/);
+  if (m) return 100 + Number(m[1]);
+  if (c === "WF") return 199;
+  m = c.match(/^L(\d+)-\d+$/);
+  if (m) return 200 + Number(m[1]);
+  if (c === "LF") return 299;
+  if (c === "GF") return 300;
+  if (c === "GF-R") return 301;
+  // Older snooker-style codes.
+  if (/^KO PRE-/.test(c)) return 0;
+  m = c.match(/^KO LAST (\d+)$/);
+  if (m) {
+    const n = Number(m[1]);
+    if (n >= 2) return 6 - Math.log2(n);
+  }
+  return null;
+}
+
+/** "the Final", "Semi-final 2", "Losers Round 1": for messages about a round. */
+export function bracketRoundTitle(code: string | null | undefined, roundName?: string | null): string {
+  const named = String(roundName ?? "").trim();
+  if (named) return named;
+  const c = String(code ?? "").trim().toUpperCase();
+  let m: RegExpMatchArray | null;
+  if (c === "F") return "the Final";
+  if ((m = c.match(/^SF(\d+)$/))) return `Semi-final ${m[1]}`;
+  if ((m = c.match(/^QF(\d+)$/))) return `Quarter-final ${m[1]}`;
+  if ((m = c.match(/^L(16|32)-(\d+)$/))) return `the round of ${m[1]}`;
+  if ((m = c.match(/^W(\d+)-\d+$/))) return `Round ${m[1]}`;
+  if ((m = c.match(/^L(\d+)-\d+$/))) return `Losers Round ${m[1]}`;
+  if (c === "WF") return "the Winners Final";
+  if (c === "LF") return "the Losers Final";
+  if (c === "GF") return "the Grand Final";
+  if (c === "GF-R") return "the Grand Final reset";
+  return c || "a later round";
+}
