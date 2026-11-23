@@ -579,11 +579,12 @@ var KnockoutRounds = (function () {
     },
 
     /**
-     * Why a bracket result cannot be cleared: either side already has a result in a
-     * later round of the same comp. Returns '' when clearing is fine. The Edge
+     * "Byrne / Kelly has already played the Final" when either side of this bracket
+     * result has a result in a later round of the same comp, else ''. While that is
+     * so, the result cannot be cleared or changed so the other side wins; the Edge
      * Function enforces the same rule.
      */
-    laterResultBlockingClear: function (match, fixtures) {
+    laterBracketPlay: function (match, fixtures) {
       if (!match || String(match['Stage'] || '') !== 'knockout') return '';
       if (match.scoreA == null || match.scoreB == null) return '';
       var rank = this.bracketRank(match['Game Week']);
@@ -608,12 +609,7 @@ var KnockoutRounds = (function () {
       });
       if (!hit) return '';
       var name = sides.indexOf(hit.playerAId) >= 0 ? hit['Player A'] : hit['Player B'];
-      return (
-        (name || 'A player in this match') +
-        ' has already played ' +
-        this.bracketRoundTitle(hit['Game Week'], hit.roundName) +
-        '. Clear that result first.'
-      );
+      return (name || 'A player in this match') + ' has already played ' + this.bracketRoundTitle(hit['Game Week'], hit.roundName);
     },
 
     isKnownCode: function (code) {

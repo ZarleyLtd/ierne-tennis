@@ -2034,12 +2034,16 @@ async function resultApprovedByLabel(envelope: PostEnvelope): Promise<string> {
 }
 
 /**
- * A bracket result cannot be cleared once either side has a result in a later round of
- * the same comp: the later match was only possible because of this one. Applies to
- * everyone, admins included; clear the later match first. Leagues and ladders are not
- * affected. Returns the reason, or null when clearing is fine.
+ * A bracket result cannot be cleared, or changed so the other side wins, once either
+ * side has a result in a later round of the same comp: the later match was only possible
+ * because of this one. Applies to everyone, admins included; clear the later match
+ * first. Leagues and ladders are not affected. Returns the reason, or null when fine.
  */
-async function laterBracketResultBlockingClear(sql: Sql, fixture: BracketFixture): Promise<string | null> {
+async function laterBracketResultBlockingChange(
+  sql: Sql,
+  fixture: BracketFixture,
+  change: "clear" | "winner",
+): Promise<string | null> {
   if (fixture.stage !== "knockout") return null;
   const rank = bracketRoundRank(fixture.round_label);
   if (rank == null) return null;
@@ -2064,7 +2068,10 @@ async function laterBracketResultBlockingClear(sql: Sql, fixture: BracketFixture
   if (!hit) return null;
   const who = sides.includes(hit.side_a_id) ? hit.side_a_id : hit.side_b_id;
   const name = sideName(who, await loadEntrantMap([who])) || "A player in this match";
-  return `${name} has already played ${bracketRoundTitle(hit.round_label, hit.round_name)}. Clear that result first.`;
+  const played = `${name} has already played ${bracketRoundTitle(hit.round_label, hit.round_name)}`;
+  return change === "winner"
+    ? `${played}, so the winner of this match cannot be changed. Clear that result first.`
+    : `${played}. Clear that result first.`;
 }
 
 /**
@@ -2100,9 +2107,13 @@ async function handleUpdateFixtureResult(envelope: PostEnvelope): Promise<Respon
   if (!clearing && (isInternalEntrantId(prior.side_a_id) || isInternalEntrantId(prior.side_b_id))) {
     return errorResponse("Both sides must be known before a result can be entered.");
   }
-  if (clearing && prior.score_a != null && prior.score_b != null) {
-    const blocked = await laterBracketResultBlockingClear(sql, prior);
-    if (blocked) return errorResponse(blocked, 409);
+  if (prior.score_a != null && prior.score_b != null) {
+    const priorAWon = Number(prior.score_a) > Number(prior.score_b);
+    const winnerChanges = !clearing && totals.setsA > totals.setsB !== priorAWon;
+    if (clearing || winnerChanges) {
+      const blocked = await laterBracketResultBlockingChange(sql, prior, clearing ? "clear" : "winner");
+      if (blocked) return errorResponse(blocked, 409);
+    }
   }
 
   const hasMatchDate = Object.prototype.hasOwnProperty.call(data, "matchDate");

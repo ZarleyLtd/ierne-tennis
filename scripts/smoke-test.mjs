@@ -203,6 +203,10 @@ async function main() {
   check((await result(fin2.fixtureId, [{ a: 8, b: 4 }])).success, 'final saved');
   r = await result(sf1.fixtureId, []);
   check(!r.success && /already played the Final/.test(r.error || ''), 'semi-final cannot be cleared after the final', r.error);
+  r = await result(sf1.fixtureId, [{ a: 6, b: 8 }]);
+  check(!r.success && /winner of this match cannot be changed/.test(r.error || ''), 'semi-final winner cannot be changed after the final', r.error);
+  r = await result(sf1.fixtureId, [{ a: 8, b: 5 }]);
+  check(r.success, 'semi-final score can still be corrected with the same winner', r.error);
   check((await result(fin2.fixtureId, [])).success, 'final cleared');
   check((await result(sf1.fixtureId, [])).success, 'semi-final cleared once the final is cleared');
   check((await result(sf2.fixtureId, [])).success, 'SF2 cleared');

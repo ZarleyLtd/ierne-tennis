@@ -741,3 +741,131 @@
 .admin-fixtures-list__row--played {
   margin-bottom: 0.6em;
 }
+
+/* ---------- Result dialog on narrow phones ---------- */
+
+/* Save, photo and Cancel always share one row: the buttons shrink to fit
+   instead of wrapping (they were fixed at 7-8.75rem each). */
+.fixture-result-dialog .fixture-result-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.6rem;
+}
+
+.fixture-result-dialog .fixture-result-actions .fixture-result-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 8.75rem !important;
+  flex: none !important;
+}
+
+.fixture-result-dialog .fixture-result-actions .fixture-result-btn--save {
+  justify-self: end;
+}
+
+.fixture-result-dialog .fixture-result-actions .fixture-result-btn--cancel {
+  justify-self: start;
+}
+
+.tennis-stepper__btn {
+  flex: 0 0 auto;
+}
+
+/* Narrow screens: the set label sits on its own line, so each side's stepper
+   gets half the row and the round buttons keep their shape. */
+@media (max-width: 26rem) {
+  .tennis-score__head,
+  .tennis-set {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .tennis-score__head > :not(.fixture-result-player-name) {
+    display: none;
+  }
+
+  .tennis-set__label {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-bottom: 0.15rem;
+  }
+
+  .tennis-set__label small {
+    display: inline;
+    margin-left: 0.35em;
+  }
+
+  .tennis-set__tb {
+    grid-column: 1 / -1;
+  }
+
+  .tennis-set {
+    column-gap: 1rem;
+  }
+
+  .tennis-stepper {
+    gap: 0.2rem;
+  }
+
+  .tennis-stepper__btn,
+  .tennis-stepper__btn .tennis-ball-svg {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .tennis-stepper__num {
+    min-width: 1.3em;
+    font-size: 1.3rem;
+  }
+}
+
+/* "Clear this result" is a quiet clay link; the theme's button style made it a black pill in light mode. */
+.fixture-result-dialog button.fixture-result-clear {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--clay) !important;
+  padding: 0.2rem 0.4rem;
+}
+
+/* Photo menu: Take Photo, Choose from Gallery and Cancel line up with one style.
+   The theme otherwise indents a button that follows another and fills some of them. */
+.result-slip-menu-card button.result-slip-menu-btn,
+.result-slip-menu-card button.result-slip-menu-cancel,
+.result-slip-lightbox__actions button.result-slip-menu-btn {
+  display: block;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--text-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-color);
+  font: inherit;
+  text-align: center;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.result-slip-menu-card button.result-slip-menu-btn:hover,
+.result-slip-lightbox__actions button.result-slip-menu-btn:hover {
+  background: var(--lighter);
+}
+
+.result-slip-menu-card button.result-slip-menu-btn:focus-visible,
+.result-slip-menu-card button.result-slip-menu-cancel:focus-visible,
+.result-slip-lightbox__actions button.result-slip-menu-btn:focus-visible {
+  outline: 3px solid var(--ball);
+  outline-offset: 2px;
+}
+
+.result-slip-menu-card button.result-slip-menu-cancel {
+  margin-top: 0.35rem !important;
+  border-color: var(--light);
+  color: var(--gray);
+}
+
+.result-slip-lightbox__actions button.result-slip-menu-btn--danger {
+  border-color: var(--warning-color);
+  color: var(--warning-color);
+}

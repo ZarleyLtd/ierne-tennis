@@ -827,11 +827,14 @@ var FixturesPage = {
     if (match.resultApprovedAt) div.setAttribute('data-result-approved-at', match.resultApprovedAt);
     if (this.isUnapprovedResult(match)) div.setAttribute('data-result-approved', 'false');
     if (match.scoreA != null && match.scoreB != null) div.setAttribute('data-had-result', '1');
-    var clearBlocked =
-      typeof KnockoutRounds !== 'undefined' && KnockoutRounds.laterResultBlockingClear
-        ? KnockoutRounds.laterResultBlockingClear(match, fixtures)
+    if (match.scoreA != null && match.scoreB != null) {
+      div.setAttribute('data-winner', Number(match.scoreA) > Number(match.scoreB) ? 'a' : 'b');
+    }
+    var laterPlay =
+      typeof KnockoutRounds !== 'undefined' && KnockoutRounds.laterBracketPlay
+        ? KnockoutRounds.laterBracketPlay(match, fixtures)
         : '';
-    if (clearBlocked) div.setAttribute('data-clear-blocked', clearBlocked);
+    if (laterPlay) div.setAttribute('data-later-play', laterPlay);
   },
 
   renderGroups: function (container, grouped, orderedWeeks, options) {
@@ -955,7 +958,9 @@ var FixturesPage = {
     var hadResult = rowEl.getAttribute('data-had-result');
     this._dialogOpenedWithResult = hadResult === '1' || hadResult === 'true';
     this.setResultDialogTitle(this._dialogOpenedWithResult);
-    this._clearBlockedReason = rowEl.getAttribute('data-clear-blocked') || '';
+    // Set when a player from this bracket match has already played a later round.
+    this._laterPlay = rowEl.getAttribute('data-later-play') || '';
+    this._openWinner = rowEl.getAttribute('data-winner') || '';
     var clearBtn = document.getElementById('fixture-result-clear');
     if (clearBtn) clearBtn.hidden = !this._dialogOpenedWithResult;
     var formatEl = document.getElementById('fixture-result-format');
@@ -1025,7 +1030,7 @@ var FixturesPage = {
     var fixtureId = document.getElementById('fixture-result-fixture-id').value;
     if (!fixtureId) throw new Error('Missing fixture');
     // A bracket result stays once a player has gone on to play a later round.
-    if (this._clearBlockedReason) throw new Error(this._clearBlockedReason);
+    if (this._laterPlay) throw new Error(this._laterPlay + '. Clear that result first.');
     if (!this.canEditFixture(this._openMembersA, this._openMembersB, this._openResultPostedAt || '')) {
       throw new Error('This result can no longer be changed by you.');
     }
@@ -1058,6 +1063,9 @@ var FixturesPage = {
     if (summary.error) throw new Error(summary.error);
     if (!summary.complete) {
       throw new Error('Enter each set until one side has won the match.');
+    }
+    if (this._laterPlay && this._openWinner && summary.winner && summary.winner !== this._openWinner) {
+      throw new Error(this._laterPlay + ', so the winner of this match cannot be changed. Clear that result first.');
     }
     var sets = TennisScore.toPayload(this._sets, this._format);
     var self = this;

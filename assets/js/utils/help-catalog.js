@@ -124,7 +124,7 @@ window.IerneHelpCatalog = {
     'result.format': { title: 'Match format', body: 'How many sets this match is played over and how the deciding set is played.' },
     'result.sets': { title: 'Set scores', body: 'Tap the ball to add a game and the minus to remove one. The next set appears when a set is finished. A match tiebreak is scored in points to 10.' },
     'result.tiebreak': { title: 'Tiebreak points', body: 'Optional. The points in the tiebreak that decided a 7-6 set.' },
-    'result.clear': { title: 'Clear result', body: 'Removes this score so the match shows as unplayed. You are asked to confirm first. In a knockout, a result stays once a player has played a later round: clear that later result first.' },
+    'result.clear': { title: 'Clear result', body: 'Removes this score so the match shows as unplayed. You are asked to confirm first. In a knockout, a result stays once a player has played a later round (the score can still be corrected if the winner stays the same): clear that later result first.' },
     'result.save': { title: 'Save', body: 'Saves the score. A player’s score waits for approval; an approver’s or admin’s is approved at once.' },
     'result.cancel': { title: 'Cancel', body: 'Closes the form without saving.' },
     'result.approve': { title: 'Approve', body: 'Approves a score that a player entered. Only approvers and admins see this.' },
