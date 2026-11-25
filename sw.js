@@ -1,7 +1,7 @@
 // Service worker: network first, cached shell as the offline fallback.
 // Bump the version whenever a shell file changes or the list below changes.
 var CACHE_PREFIX = 'ierne-tennis-shell-';
-var CACHE = CACHE_PREFIX + 'v5';
+var CACHE = CACHE_PREFIX + 'v6';
 var SHELL = [
   './',
   './index.html',
@@ -33,6 +33,10 @@ var SHELL = [
   './assets/js/utils/formatters.js',
   './assets/js/utils/image-loader.js',
   './assets/js/utils/nav-active.js',
+  './assets/css/jp-logo.css',
+  './assets/icons/jpLogo-white-rotated-2000.png',
+  './assets/icons/jpLogo-animated.svg',
+  './assets/js/components/jp-logo.js',
   './assets/js/utils/brief-message.js',
   './assets/js/utils/confirm-dialog.js',
   './assets/js/utils/working-indicator.js',

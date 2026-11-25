@@ -480,10 +480,6 @@
   --working-z: 10040;
 }
 
-.footer__credit {
-  color: var(--court-green-light);
-}
-
 /* ---------- Fixes from the browser check ---------- */
 
 /* Hero titles sit on dark court artwork. */
