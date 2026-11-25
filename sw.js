@@ -1,7 +1,7 @@
 // Service worker: network first, cached shell as the offline fallback.
 // Bump the version whenever a shell file changes or the list below changes.
 var CACHE_PREFIX = 'ierne-tennis-shell-';
-var CACHE = CACHE_PREFIX + 'v6';
+var CACHE = CACHE_PREFIX + 'v7';
 var SHELL = [
   './',
   './index.html',
@@ -80,7 +80,10 @@ self.addEventListener('activate', function (event) {
 self.addEventListener('fetch', function (event) {
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin || event.request.method !== 'GET') return;
-  event.respondWith(fetch(event.request).then(function (response) {
+  // cache: 'no-cache' revalidates with the server instead of trusting the browser's HTTP cache.
+  // GitHub Pages sends max-age=600, so without it a new page could pair with a stale stylesheet
+  // for up to 10 minutes after a deploy (that is how the footer logo showed at 2000px).
+  event.respondWith(fetch(event.request, { cache: 'no-cache' }).then(function (response) {
     var copy = response.clone();
     caches.open(CACHE).then(function (cache) { cache.put(event.request, copy); });
     return response;
