@@ -77,6 +77,7 @@ window.IerneHelpCatalog = {
     'chrome.compName': { title: 'Competition', body: 'The competition on show. Change it with the arrows on the home page.' },
     'chrome.groupFilter': { title: 'Group filter', body: 'Shows one group only. Tap the selected group again to show every group.' },
     'chrome.backToTop': { title: 'Back to top', body: 'Scrolls to the top of the page.' },
+    'chrome.credit': { title: 'Created by JP', body: 'Who made this site. Tap the JP logo to watch it come apart into a J and a P and fold back together.' },
     'error.home': { title: 'Go home', body: 'Leaves this missing page and opens the home page.' },
 
     // ---------- Home ----------
