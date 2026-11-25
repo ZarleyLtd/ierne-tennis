@@ -5,7 +5,7 @@
 
    Markup (the PNG is the fallback if the SVG cannot be loaded):
      <button type="button" class="jp-logo" aria-label="JP logo: tap to replay its animation">
-       <img src="assets/icons/jpLogo-white-rotated-2000.png" alt="JP">
+       <img src="assets/icons/jpLogo-white-rotated-2000.png" alt="JP" width="37" height="22">
      </button>
    Every .jp-logo on the page is wired up on load. For markup added later, call JpLogo.init(rootEl).
    data-src on the button overrides the SVG path (for pages that are not at the site root). */
@@ -36,6 +36,12 @@
       if (!svg || !svg.pauseAnimations) return;
       svg.pauseAnimations();
       svg.setCurrentTime(DUR); // rest on the finished logo, same as the PNG
+      // The SVG file says 2000x1186. jp-logo.css sizes it, but if that stylesheet is missing or
+      // stale the logo would fill the page, so take the fallback size from the PNG it replaces
+      // (or 37x22). CSS still wins over these attributes whenever jp-logo.css is loaded.
+      const img = btn.querySelector('img');
+      svg.setAttribute('width', (img && img.getAttribute('width')) || '37');
+      svg.setAttribute('height', (img && img.getAttribute('height')) || '22');
       btn.replaceChildren(svg);
 
       let busy = false;
